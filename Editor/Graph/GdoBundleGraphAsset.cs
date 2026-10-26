@@ -15,9 +15,15 @@ namespace KitchenLib.Studio.Editor.Graph
         [SerializeField] private List<GdoGraphNodeRecord> _nodes = new List<GdoGraphNodeRecord>();
         [SerializeField] private List<GdoGraphRelationshipRecord> _relationships = new List<GdoGraphRelationshipRecord>();
         [SerializeField] private List<GdoGraphEdgeRecord> _edges = new List<GdoGraphEdgeRecord>();
+        [SerializeField] private List<StudioCustomGraphNodeRecord> _customNodes = new List<StudioCustomGraphNodeRecord>();
         [SerializeField] private List<GdoGraphPrefabRecord> _prefabs = new List<GdoGraphPrefabRecord>();
         [SerializeField] private List<GdoGraphPrefabProjectionState> _prefabProjectionStates =
             new List<GdoGraphPrefabProjectionState>();
+
+        public IReadOnlyList<StudioCustomGraphNodeRecord> CustomNodes => _customNodes.OrderBy(value => value.Id, System.StringComparer.Ordinal).ToArray();
+        internal StudioCustomGraphNodeRecord FindCustomNode(string id) => _customNodes.SingleOrDefault(value => value.Id == id);
+        internal void AddCustomNode(StudioCustomGraphNodeRecord node) => _customNodes.Add(node);
+        internal bool RemoveCustomNode(string id) => _customNodes.RemoveAll(value => value.Id == id) != 0;
 
         public string BundleName => _bundleName;
         public string BundleFileName => _bundleFileName;
@@ -69,7 +75,8 @@ namespace KitchenLib.Studio.Editor.Graph
         internal GdoGraphEdgeRecord FindEdge(string id) => _edges.SingleOrDefault(value => value.Id == id);
         internal GdoGraphPrefabRecord FindPrefab(string id) => _prefabs.SingleOrDefault(value => value.Id == id);
         internal bool ContainsElement(string id) => _nodes.Any(value => value.Id == id) ||
-            _relationships.Any(value => value.Id == id) || _prefabs.Any(value => value.Id == id);
+            _relationships.Any(value => value.Id == id) || _prefabs.Any(value => value.Id == id) ||
+            _customNodes.Any(value => value.Id == id);
         internal bool HasConnections(string id) => _relationships.Any(value => value.OwnerNodeId == id) ||
             _edges.Any(value => value.OutputNodeId == id || value.InputNodeId == id);
     }

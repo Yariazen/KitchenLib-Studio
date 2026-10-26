@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KitchenLib.Studio.Generated;
+using KitchenLib.Studio.Editor.Api.Build;
+using KitchenLib.Studio.Editor.Api.Authoring;
 
 using KitchenLib.Studio.Editor.Authoring;
 using KitchenLib.Studio.Editor.Overlays;
@@ -15,6 +17,10 @@ namespace KitchenLib.Studio.Editor.Graph
             if (graph == null) throw new ArgumentNullException(nameof(graph));
             var fields = new List<GdoGraphProjectedField>();
             var diagnostics = new List<GdoGraphProjectionDiagnostic>();
+            var customIssues = new List<GdoGraphDiagnostic>();
+            var context = new ProjectionContext(graph, StudioCustomGraphPipeline.Project(graph, customIssues));
+            foreach (GdoGraphDiagnostic issue in customIssues)
+                diagnostics.Add(new GdoGraphProjectionDiagnostic(issue.Category, issue.ElementId, issue.PropertyPath, issue.Message, issue.Severity));
             foreach (GdoGraphNodeRecord owner in graph.Nodes.Where(node => node.Kind == GdoGraphNodeKind.Local && !node.IsBroken))
             {
                 GdoTypeDescriptorView descriptor;
@@ -30,7 +36,7 @@ namespace KitchenLib.Studio.Editor.Graph
                     string fieldKey = field.Key;
                     try
                     {
-                        GdoOverlayValue value = ProjectField(graph, owner,
+                        GdoOverlayValue value = ProjectField(context, owner,
                             field.Descriptor.Value, fieldKey, diagnostics);
                         if (value != null)
                             fields.Add(new GdoGraphProjectedField(owner.Id, field.DeclaringTypeName, field.Name, value));
@@ -44,7 +50,7 @@ namespace KitchenLib.Studio.Editor.Graph
             return new GdoGraphProjectionResult(fields, diagnostics);
         }
 
-        private static GdoOverlayValue ProjectField(GdoBundleGraphAsset graph,
+        private static GdoOverlayValue ProjectField(ProjectionContext graph,
             GdoGraphNodeRecord owner,
             GdoValueDescriptorData descriptor, string fieldKey, ICollection<GdoGraphProjectionDiagnostic> diagnostics)
         {
@@ -85,7 +91,7 @@ namespace KitchenLib.Studio.Editor.Graph
             return GdoOverlayValueEditor.CreateDefault(descriptor);
         }
 
-        private static GdoOverlayValue ProjectNested(GdoBundleGraphAsset graph, string contextId,
+        private static GdoOverlayValue ProjectNested(ProjectionContext graph, string contextId,
             GdoValueDescriptorData descriptor, GdoOverlayValue template, string path, string ownerId,
             ICollection<GdoGraphProjectionDiagnostic> diagnostics)
         {
@@ -127,7 +133,7 @@ namespace KitchenLib.Studio.Editor.Graph
             }));
         }
 
-        private static GdoOverlayValue ResolveSingle(GdoBundleGraphAsset graph, string inputNodeId, string inputPath,
+        private static GdoOverlayValue ResolveSingle(ProjectionContext graph, string inputNodeId, string inputPath,
             string expectedType, string ownerId, ICollection<GdoGraphProjectionDiagnostic> diagnostics)
         {
             GdoGraphEdgeRecord[] edges = EdgesInto(graph, inputNodeId, inputPath).ToArray();
@@ -141,14 +147,34 @@ namespace KitchenLib.Studio.Editor.Graph
                 Resolve(graph, edges[0], expectedType, ownerId, inputPath, diagnostics);
         }
 
-        private static GdoOverlayValue Resolve(GdoBundleGraphAsset graph, GdoGraphEdgeRecord edge, string expectedType,
+        private static GdoOverlayValue Resolve(ProjectionContext graph, GdoGraphEdgeRecord edge, string expectedType,
             string ownerId, string path, ICollection<GdoGraphProjectionDiagnostic> diagnostics)
         {
-            GdoGraphNodeRecord target = graph.Nodes.FirstOrDefault(node => node.Id == edge.OutputNodeId);
+            string targetId = edge.OutputNodeId;
+            if (graph.Graph.FindCustomNode(edge.OutputNodeId) != null)
+            {
+                if (!graph.Projections.TryGetValue(edge.OutputNodeId, out StudioBuildProjection projection) ||
+                    !projection.Values.TryGetValue(edge.OutputPortPath, out StudioAuthoringValue value) ||
+                    value.Kind != StudioAuthoringValueKind.Reference)
+                {
+                    diagnostics.Add(new GdoGraphProjectionDiagnostic("UnresolvedCustomReference", ownerId, path,
+                        "Custom output has no valid projected GDO reference."));
+                    return null;
+                }
+                targetId = value.AsReference();
+            }
+            GdoGraphNodeRecord target = graph.Nodes.FirstOrDefault(node => node.Id == targetId);
             if (target == null || target.IsBroken)
             {
                 diagnostics.Add(new GdoGraphProjectionDiagnostic("UnresolvedReference", ownerId, path,
                     "Referenced graph node is missing or broken."));
+                return null;
+            }
+            string actualType = target.Kind == GdoGraphNodeKind.Local ? target.RuntimeTypeName : target.ExpectedType;
+            if (!GdoGraphConnectionTypeResolver.IsAssignable(actualType, expectedType))
+            {
+                diagnostics.Add(new GdoGraphProjectionDiagnostic("IncompatibleReference", ownerId, path,
+                    "Projected GDO reference has an incompatible type."));
                 return null;
             }
             try
@@ -165,7 +191,7 @@ namespace KitchenLib.Studio.Editor.Graph
             }
         }
 
-        private static IEnumerable<GdoGraphEdgeRecord> EdgesInto(GdoBundleGraphAsset graph,
+        private static IEnumerable<GdoGraphEdgeRecord> EdgesInto(ProjectionContext graph,
             string nodeId, string path) =>
             graph.Edges.Where(edge => edge.InputNodeId == nodeId && edge.InputPortPath == path)
                 .OrderBy(edge => edge.Order)
@@ -181,6 +207,16 @@ namespace KitchenLib.Studio.Editor.Graph
                 diagnostics.Add(new GdoGraphProjectionDiagnostic("DuplicateSetValue", ownerId, path, exception.Message));
                 return null;
             }
+        }
+        private sealed class ProjectionContext
+        {
+            internal ProjectionContext(GdoBundleGraphAsset graph, IReadOnlyDictionary<string, StudioBuildProjection> projections)
+            { Graph = graph; Projections = projections; }
+            internal GdoBundleGraphAsset Graph { get; }
+            internal IReadOnlyDictionary<string, StudioBuildProjection> Projections { get; }
+            internal IReadOnlyList<GdoGraphNodeRecord> Nodes => Graph.Nodes;
+            internal IReadOnlyList<GdoGraphRelationshipRecord> Relationships => Graph.Relationships;
+            internal IReadOnlyList<GdoGraphEdgeRecord> Edges => Graph.Edges;
         }
     }
 }

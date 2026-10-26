@@ -83,11 +83,12 @@ namespace KitchenLib.Studio.Editor.Graph
                 }
             }
 
+            issues.AddRange(StudioCustomGraphPipeline.Validate(graph));
             GdoGraphProjectionResult projection = GdoGraphRelationshipProjector.Project(graph);
             foreach (GdoGraphProjectionDiagnostic diagnostic in projection.Diagnostics)
             {
                 GdoGraphNodeRecord node = graph.Nodes.FirstOrDefault(value => value.Id == diagnostic.OwnerNodeId);
-                Add(issues, ValidationSeverity.Error, diagnostic.Category, node, diagnostic.Path, diagnostic.Message,
+                Add(issues, diagnostic.Severity, diagnostic.Category, node, diagnostic.Path, diagnostic.Message,
                     diagnostic.OwnerNodeId);
             }
             foreach (GdoGraphProjectedField field in projection.Fields)

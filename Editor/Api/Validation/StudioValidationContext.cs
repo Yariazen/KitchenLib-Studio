@@ -16,7 +16,11 @@ namespace KitchenLib.Studio.Editor.Api.Validation
         }
         /// <summary>Stable authored product identifier, never a generated path.</summary>
         public string ProductId { get; }
-        /// <summary>Snapshot of authored nodes, including unrecognized node types.</summary>
+        /// <summary>
+        /// Snapshot of decodable custom nodes, including unrecognized node types, and authored GDO nodes.
+        /// GDO nodes use KitchenLibStudioApi.GdoReferenceSemanticTypeId and expose a name value.
+        /// Invalid stored encodings produce Studio diagnostics and are omitted without changing stored data.
+        /// </summary>
         public IReadOnlyList<StudioGraphNodeData> Nodes { get; }
     }
 }

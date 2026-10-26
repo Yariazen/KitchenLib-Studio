@@ -35,7 +35,7 @@ namespace KitchenLib.Studio.Editor.Graph
         {
             string descriptorPath = Regex.Replace(inputPath ?? string.Empty, @"\[\d+\]", "[]");
             GdoGraphNodeRecord owner = graph.FindNode(elementId);
-            if (owner != null && !owner.IsBroken)
+            if (owner != null && owner.Kind == GdoGraphNodeKind.Local && !owner.IsBroken)
             {
                 GdoTypeDescriptorView descriptor = GdoDescriptorCatalog.ForTarget(owner.Asset);
                 return GdoGraphPortCatalog.ForDescriptor(descriptor)
@@ -45,7 +45,7 @@ namespace KitchenLib.Studio.Editor.Graph
             GdoGraphRelationshipRecord relationship = graph.FindRelationship(elementId);
             if (relationship == null) return null;
             GdoGraphNodeRecord relationshipOwner = graph.FindNode(relationship.OwnerNodeId);
-            if (relationshipOwner == null || relationshipOwner.IsBroken) return null;
+            if (relationshipOwner == null || relationshipOwner.Kind != GdoGraphNodeKind.Local || relationshipOwner.IsBroken) return null;
             return GdoGraphPortCatalog.ForDescriptor(GdoDescriptorCatalog.ForTarget(relationshipOwner.Asset))
                 .FirstOrDefault(port => port.RelationshipPath == relationship.FieldPath &&
                     port.Path == descriptorPath)?.ExpectedTypeName;

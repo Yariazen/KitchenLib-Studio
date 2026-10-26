@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using KitchenData;
+using KitchenLib.Studio.Editor.Api.Authoring;
+using KitchenLib.Studio.Editor.Api.Graph;
 using UnityEditor;
 using UnityEngine;
 
@@ -52,6 +54,44 @@ namespace KitchenLib.Studio.Editor.Graph
             graph.SetSchemaVersion(CurrentSchemaVersion);
             Dirty(graph);
             return true;
+        }
+
+        public static StudioCustomGraphNodeRecord AddCustomNode(GdoBundleGraphAsset graph, string typeId, Rect position)
+        {
+            RequireGraph(graph);
+            StudioGraphNodeDefinition definition = StudioGraphNodeRegistry.Find(typeId) ??
+                throw new ArgumentException("Graph node definition is unavailable.", nameof(typeId));
+            Record(graph, "Add custom graph node");
+            var node = StudioCustomGraphNodeRecord.Create(NewId(), definition, position);
+            graph.AddCustomNode(node);
+            Dirty(graph);
+            return node;
+        }
+
+        public static void SetCustomValue(GdoBundleGraphAsset graph, string nodeId, string key, StudioAuthoringValue value)
+        {
+            RequireGraph(graph);
+            StudioCustomGraphNodeRecord node = graph.FindCustomNode(nodeId) ?? throw new ArgumentException("Custom node is missing.", nameof(nodeId));
+            StudioGraphFieldDefinition field = StudioGraphNodeRegistry.Find(node.TypeId)?.Fields.FirstOrDefault(item => item.Key == key);
+            if (field == null) throw new ArgumentException("Field definition is unavailable.", nameof(key));
+            if (value == null || (value.Kind != StudioAuthoringValueKind.Null && value.Kind != field.ValueKind))
+                throw new ArgumentException("The authored value does not match the field kind.", nameof(value));
+            Record(graph, "Edit custom graph field");
+            node.SetValue(key, value);
+            Dirty(graph);
+        }
+
+        public static void RemoveCustomNode(GdoBundleGraphAsset graph, string nodeId, bool removeConnectedEdges = false)
+        {
+            RequireGraph(graph);
+            if (graph.FindCustomNode(nodeId) == null) throw new ArgumentException("Custom node is missing.", nameof(nodeId));
+            if (graph.HasConnections(nodeId) && !removeConnectedEdges)
+                throw new InvalidOperationException("Explicitly allow removing connected edges before removing this node.");
+            Record(graph, "Remove custom graph node");
+            foreach (GdoGraphEdgeRecord edge in graph.Edges.Where(item => item.InputNodeId == nodeId || item.OutputNodeId == nodeId).ToArray())
+                graph.RemoveEdge(edge.Id);
+            graph.RemoveCustomNode(nodeId);
+            Dirty(graph);
         }
 
         public static GdoGraphNodeRecord AddMember(GdoBundleGraphAsset graph, GameDataObject asset, Rect position)
@@ -192,7 +232,8 @@ namespace KitchenLib.Studio.Editor.Graph
                     else
                     {
                         GdoGraphPrefabRecord prefab = graph.FindPrefab(value.Key);
-                        prefab.SetPosition(value.Value);
+                        if (prefab != null) prefab.SetPosition(value.Value);
+                        else graph.FindCustomNode(value.Key).SetPosition(value.Value);
                     }
                 }
             }

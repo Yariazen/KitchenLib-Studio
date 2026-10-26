@@ -2,7 +2,9 @@
 
 ## [0.1.0-alpha.1]
 
-- Define the editor-only `KitchenLib.Studio.Editor.Api` contracts for declarative graph nodes, scalar authoring values, validation findings, and bounded build projections. Explicit registration currently records definitions; graph rendering, persistence, validation scheduling, and build integration follow separately.
+- Support declarative custom graph nodes through the editor-only `KitchenLib.Studio.Editor.Api`: atomic registration, deferred palette refresh, Studio-owned controls, undoable persistence, missing-definition placeholders, isolated validation and bounded build projection.
+- Clarify the `0.x` API: registration requires ordinal `namespace:name` type IDs, non-blank field/port keys without control characters, and the Unity editor thread. `StudioBuildProjection.Values` maps declared output-port keys to authored values (maximum 256 outputs and 65536 characters per text/reference payload). The new `KitchenLibStudioApi.GdoReferenceSemanticTypeId` constant identifies outputs whose Reference values name existing authored GDO nodes for Studio relationship projection; unknown output keys and unresolved GDO references fail validation. Extension findings are limited to 256 per result and cannot impersonate built-in recoverable errors. No extension file-writing or runtime-manifest surface is introduced.
+- Persist custom-node instance/type IDs, positions and keyed scalar records with raw payloads; reuse keyed graph edges. Unknown definitions, keys and value discriminants retain their original storage. Existing graph/schema fields and source GUIDs remain unchanged.
 - Establish the supported C# API policy: during `0.x`, incompatible API changes require changelog documentation; strict semantic-version compatibility begins at `1.0.0`, with later breaking changes requiring a major version. Serialized stable IDs and field/port keys are protected independently from the first alpha.
 - Establish the `com.kitchenlib.studio` Unity Package Manager package for Unity 2020.3.
 - Place production editor tooling and required third-party dependencies under `Editor`.

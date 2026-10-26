@@ -37,6 +37,11 @@ namespace KitchenLib.Studio.Editor.Graph
                 return false;
             }
             GdoGraphProjectionResult projection = GdoGraphRelationshipProjector.Project(graph);
+            // Projection is evaluated again after validation. An extension can fail on this pass;
+            // never apply its partial fields merely because the preceding evaluation succeeded.
+            foreach (GdoGraphProjectionDiagnostic diagnostic in projection.Diagnostics)
+                issues.Add(new GdoGraphDiagnostic(diagnostic.Severity, diagnostic.Category,
+                    diagnostic.OwnerNodeId, string.Empty, diagnostic.Path, diagnostic.Message));
             foreach (GdoGraphProjectedField field in projection.Fields)
                 if (!GdoOverlayLimits.TryValidate(new[] { field.Value }, out GdoOverlayPersistenceDiagnostic limit))
                     issues.Add(new GdoGraphDiagnostic(ValidationSeverity.Fatal, limit.Category, field.OwnerNodeId,

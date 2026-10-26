@@ -2,13 +2,15 @@ using System.Collections.Generic;
 using System.Linq;
 
 using KitchenLib.Studio.Editor.Overlays;
+using KitchenLib.Studio.Editor.Validation;
 
 namespace KitchenLib.Studio.Editor.Graph
 {
     internal sealed class GdoGraphProjectionDiagnostic
     {
-        public GdoGraphProjectionDiagnostic(string category, string ownerNodeId, string path, string message)
-        { Category = category; OwnerNodeId = ownerNodeId; Path = path; Message = message; }
+        public GdoGraphProjectionDiagnostic(string category, string ownerNodeId, string path, string message, ValidationSeverity severity = ValidationSeverity.Error)
+        { Category = category; OwnerNodeId = ownerNodeId; Path = path; Message = message; Severity = severity; }
+        public ValidationSeverity Severity { get; }
         public string Category { get; }
         public string OwnerNodeId { get; }
         public string Path { get; }

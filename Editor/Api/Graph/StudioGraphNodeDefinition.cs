@@ -22,7 +22,11 @@ namespace KitchenLib.Studio.Editor.Api.Graph
             Projector = projector ?? throw new System.ArgumentNullException(nameof(projector));
             Validator = validator;
         }
-        /// <summary>Stable extension-owned namespaced identifier, independent of CLR names.</summary>
+        /// <summary>
+        /// Stable extension-owned identifier, independent of CLR names. Registration requires namespace:name:
+        /// both parts start with an ASCII letter or digit and allow letters, digits, dots, underscores and
+        /// hyphens; the name also allows slashes. Identity and ordering are ordinal.
+        /// </summary>
         public string TypeId { get; }
         /// <summary>Human-readable node label.</summary>
         public string DisplayName { get; }

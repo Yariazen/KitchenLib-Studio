@@ -115,6 +115,17 @@ namespace KitchenLib.Studio.Editor.Graph
                 _ => hasGraph && _addSelected != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             evt.menu.AppendAction("External Reference…", _ => _addExternal?.Invoke(),
                 _ => hasGraph && _addExternal != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            foreach (var definition in StudioGraphNodeRegistry.All)
+            {
+                string typeId = definition.TypeId;
+                evt.menu.AppendAction("Create Custom/" + definition.DisplayName + " (" + typeId + ")", _ =>
+                {
+                    Vector2 location = this.ChangeCoordinatesTo(contentViewContainer, evt.localMousePosition);
+                    var record = GdoBundleGraphRepository.AddCustomNode(_graph, typeId, new Rect(location, new Vector2(280, 180)));
+                    Load(_graph, record.Id);
+                    _graphChanged?.Invoke();
+                }, _ => hasGraph ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            }
             evt.menu.AppendAction("Create/Prefab", _ => CreatePrefab(evt.localMousePosition),
                 _ => hasGraph ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             evt.menu.AppendSeparator();
@@ -203,6 +214,16 @@ namespace KitchenLib.Studio.Editor.Graph
                     Load(graph, record.Id);
                     _graphChanged?.Invoke();
                 }, () => RemovePrefabFromAction(record.Id));
+                _elements.Add(record.Id, element);
+                AddElement(element);
+            }
+            foreach (StudioCustomGraphNodeRecord record in graph.CustomNodes)
+            {
+                var element = new StudioCustomGraphNodeView(graph, record, () =>
+                {
+                    schedule.Execute(() => Load(graph, record.Id));
+                    _graphChanged?.Invoke();
+                }, () => RemoveCustomNodeFromAction(record.Id));
                 _elements.Add(record.Id, element);
                 AddElement(element);
             }
@@ -529,7 +550,7 @@ namespace KitchenLib.Studio.Editor.Graph
         public void PersistPosition(string elementId, Rect position)
         {
             if (_graph == null || FindElement(elementId) == null) return;
-            GdoBundleGraphRepository.SetPosition(_graph, elementId, position);
+            GdoBundleGraphRepository.SetElementPositions(_graph, new Dictionary<string, Rect> { { elementId, position } });
             FindElement(elementId).SetPosition(position);
         }
 
@@ -609,6 +630,16 @@ namespace KitchenLib.Studio.Editor.Graph
             GdoGraphPrefabRecord record = GdoBundleGraphRepository.AddPrefab(_graph, "New Prefab",
                 new Rect(graphPosition, new Vector2(260, 220)));
             Load(_graph, record.Id);
+            _graphChanged?.Invoke();
+        }
+
+        private void RemoveCustomNodeFromAction(string nodeId)
+        {
+            bool connected = _graph.HasConnections(nodeId);
+            if (connected && !_confirmMemberRemoval(nodeId)) return;
+            GdoBundleGraphRepository.RemoveCustomNode(_graph, nodeId, connected);
+            GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+            Load(_graph);
             _graphChanged?.Invoke();
         }
 

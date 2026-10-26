@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEngine;
 
 using KitchenLib.Studio.Editor.Authoring;
+using KitchenLib.Studio.Editor.Api.Authoring;
 using KitchenLib.Studio.Editor.Overlays;
 
 namespace KitchenLib.Studio.Editor.Graph
@@ -61,6 +62,17 @@ namespace KitchenLib.Studio.Editor.Graph
         public GdoGraphEdgeRecord Connect(string outputElementId, string outputPortPath,
             string inputElementId, string inputPath, int order)
         {
+            if (StudioCustomGraphPipeline.IsCustomEdge(_graph, outputElementId, inputElementId))
+            {
+                if (!StudioCustomGraphPipeline.CanConnect(_graph, outputElementId, outputPortPath, inputElementId, inputPath))
+                    throw new ArgumentException("Custom connection is incompatible or a port is full.");
+                int customGroup = Begin("Connect custom graph node");
+                GdoGraphEdgeRecord customEdge = GdoBundleGraphRepository.AddEdge(_graph,
+                    outputElementId, outputPortPath, inputElementId, inputPath, order);
+                ApplyOrRevert(customGroup);
+                Undo.CollapseUndoOperations(customGroup);
+                return customEdge;
+            }
             string exactType = GdoGraphConnectionTypeResolver.ExactOutputType(
                 _graph, outputElementId, outputPortPath);
             if (string.IsNullOrWhiteSpace(exactType))
@@ -89,6 +101,8 @@ namespace KitchenLib.Studio.Editor.Graph
         {
             string exactType = GdoGraphConnectionTypeResolver.ExactOutputType(
                 _graph, outputElementId, outputPortPath);
+            if (StudioCustomGraphPipeline.IsCustomEdge(_graph, outputElementId, inputElementId))
+                return StudioCustomGraphPipeline.CanConnect(_graph, outputElementId, outputPortPath, inputElementId, inputPath);
             if (string.IsNullOrWhiteSpace(exactType)) return false;
             GdoGraphPortDescriptor port = ResolveInputPort(inputElementId, inputPath);
             if (port == null || !GdoGraphConnectionTypeResolver.IsAssignable(exactType, port.ExpectedTypeName)) return false;
@@ -142,8 +156,11 @@ namespace KitchenLib.Studio.Editor.Graph
         public void Disconnect(string edgeId)
         {
             int group = Begin("Disconnect GDO graph relationship");
+            GdoGraphEdgeRecord edge = _graph.FindEdge(edgeId);
+            bool custom = edge != null && StudioCustomGraphPipeline.IsCustomEdge(_graph, edge.OutputNodeId, edge.InputNodeId);
             GdoBundleGraphRepository.RemoveEdge(_graph, edgeId);
-            ApplyOrRevert(group);
+            if (custom) GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+            else ApplyOrRevert(group);
             Undo.CollapseUndoOperations(group);
         }
 
@@ -169,6 +186,16 @@ namespace KitchenLib.Studio.Editor.Graph
             int group = Begin("Edit GDO relationship value");
             GdoBundleGraphRepository.SetRelationshipValue(_graph, relationshipId, value);
             ApplyOrRevert(group);
+            Undo.CollapseUndoOperations(group);
+        }
+
+        internal void SetCustomValue(string nodeId, string key, StudioAuthoringValue value)
+        {
+            int group = Begin("Edit custom graph field");
+            GdoBundleGraphRepository.SetCustomValue(_graph, nodeId, key, value);
+            // Incomplete edits remain authored and diagnosable. Successful projections join the
+            // field's undo transaction; failures preserve the previous companion contents.
+            GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
             Undo.CollapseUndoOperations(group);
         }
 
@@ -201,10 +228,12 @@ namespace KitchenLib.Studio.Editor.Graph
             return group;
         }
 
-        private GdoGraphPortDescriptor ResolveInputPort(string elementId, string path)
+        private GdoGraphPortDescriptor ResolveInputPort(string elementId, string path) => InputPort(_graph, elementId, path);
+
+        internal static GdoGraphPortDescriptor InputPort(GdoBundleGraphAsset graph, string elementId, string path)
         {
             string descriptorPath = Regex.Replace(path ?? string.Empty, @"\[\d+\]", "[]");
-            GdoGraphNodeRecord owner = _graph.Nodes.FirstOrDefault(node => node.Id == elementId);
+            GdoGraphNodeRecord owner = graph.Nodes.FirstOrDefault(node => node.Id == elementId);
             if (owner != null && !owner.IsBroken)
             {
                 GdoTypeDescriptorView descriptor = GdoDescriptorCatalog.ForTarget(owner.Asset);
@@ -212,9 +241,9 @@ namespace KitchenLib.Studio.Editor.Graph
                     .Concat(GdoUnityObjectPortCatalog.ForDescriptor(descriptor))
                     .FirstOrDefault(port => port.Path == descriptorPath);
             }
-            GdoGraphRelationshipRecord relationship = _graph.Relationships.FirstOrDefault(value => value.Id == elementId);
+            GdoGraphRelationshipRecord relationship = graph.Relationships.FirstOrDefault(value => value.Id == elementId);
             if (relationship == null) return null;
-            GdoGraphNodeRecord relationshipOwner = _graph.Nodes.First(node => node.Id == relationship.OwnerNodeId);
+            GdoGraphNodeRecord relationshipOwner = graph.Nodes.First(node => node.Id == relationship.OwnerNodeId);
             return GdoGraphPortCatalog.ForDescriptor(GdoDescriptorCatalog.ForTarget(relationshipOwner.Asset))
                 .FirstOrDefault(port => port.RelationshipPath == relationship.FieldPath && port.Path == descriptorPath);
         }

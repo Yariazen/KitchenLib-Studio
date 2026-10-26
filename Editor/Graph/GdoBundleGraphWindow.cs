@@ -51,10 +51,12 @@ namespace KitchenLib.Studio.Editor.Graph
             minSize = new Vector2(800f, 500f);
             EnsureUsableWindowBounds();
             Undo.undoRedoPerformed += HandleUndoRedo;
+            StudioGraphNodeRegistry.Changed += HandleUndoRedo;
         }
         private void OnDisable()
         {
             Undo.undoRedoPerformed -= HandleUndoRedo;
+            StudioGraphNodeRegistry.Changed -= HandleUndoRedo;
             _graphView?.DisposeSnapshotThumbnails();
         }
 
@@ -123,7 +125,7 @@ namespace KitchenLib.Studio.Editor.Graph
                 " graph issue(s) before building";
             _toolbar.SetGraphState(hasGraph, canBuild, buildReason);
             _onboarding.style.display = hasGraph ? DisplayStyle.None : DisplayStyle.Flex;
-            _emptyGraph.style.display = hasGraph && graph.Nodes.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+            _emptyGraph.style.display = hasGraph && graph.Nodes.Count == 0 && graph.CustomNodes.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             string readyStatus = !hasGraph ? "Create or select a bundle graph to begin" :
                 !hasLocalGdo ? "Bundle graph ready · add your first GDO" :
                 "Graph valid · " + graph.Nodes.Count + " GDO(s) · " + graph.Edges.Count + " connection(s)";

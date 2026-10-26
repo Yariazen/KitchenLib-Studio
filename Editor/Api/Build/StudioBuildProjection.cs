@@ -15,7 +15,12 @@ namespace KitchenLib.Studio.Editor.Api.Build
             Values = StudioApiGuard.Values(values, nameof(values));
             Findings = StudioApiGuard.List(findings, nameof(findings));
         }
-        /// <summary>Bounded data proposed by the projector, not filesystem or bundle-writing access.</summary>
+        /// <summary>
+        /// Values keyed by declared output-port keys. At most 256 outputs are accepted; text and reference
+        /// payloads are limited to 65536 characters. A GdoReferenceSemanticTypeId output must be a Reference
+        /// containing an existing authored GDO node ID. Studio resolves it through relationship projection.
+        /// These values never specify files, runtime manifests, or bundle-writing instructions.
+        /// </summary>
         public IReadOnlyDictionary<string, StudioAuthoringValue> Values { get; }
         /// <summary>Structured projection diagnostics.</summary>
         public IReadOnlyList<StudioValidationFinding> Findings { get; }

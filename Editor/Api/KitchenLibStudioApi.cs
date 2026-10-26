@@ -10,45 +10,21 @@ namespace KitchenLib.Studio.Editor.Api
     /// <summary>Editor-only entry point for declarative Studio extensions.</summary>
     public static class KitchenLibStudioApi
     {
-        private static readonly object RegistrationLock = new object();
-        private static readonly SortedDictionary<string, StudioGraphNodeDefinition> Definitions =
-            new SortedDictionary<string, StudioGraphNodeDefinition>(StringComparer.Ordinal);
+        /// <summary>Ordinal semantic port token for a reference to an existing authored GDO node.</summary>
+        public const string GdoReferenceSemanticTypeId = "studio:gdo-reference";
 
         /// <summary>
-        /// Registers an entire provider atomically, rejecting duplicate ordinal type IDs.
-        /// This alpha facade records definitions for the Studio registry; registration alone
-        /// does not implement node rendering, persistence, validation scheduling, or builds.
-        /// Registrations last until the next editor domain reload.
+        /// Registers a complete provider atomically on the Unity editor thread. Type IDs use
+        /// namespace:name syntax and ordinal comparison. Register again after each domain reload.
+        /// Successful registrations coalesce into one deferred refresh of open graph windows.
         /// </summary>
         /// <exception cref="ArgumentNullException">The provider is null.</exception>
-        /// <exception cref="ArgumentException">Definitions are null or contain null entries or duplicate IDs.</exception>
-        public static void RegisterGraphNodes(IStudioGraphNodeProvider provider)
-        {
-            if (provider == null) throw new ArgumentNullException(nameof(provider));
-            var supplied = provider.GetDefinitions();
-            if (supplied == null) throw new ArgumentException("The provider must return definitions.", nameof(provider));
-            var pending = new SortedDictionary<string, StudioGraphNodeDefinition>(StringComparer.Ordinal);
-            foreach (var definition in supplied)
-            {
-                if (definition == null) throw new ArgumentException("Definitions must not contain null entries.", nameof(provider));
-                if (pending.ContainsKey(definition.TypeId))
-                    throw new ArgumentException("Duplicate graph node type ID: " + definition.TypeId, nameof(provider));
-                pending.Add(definition.TypeId, definition);
-            }
-            lock (RegistrationLock)
-            {
-                foreach (var id in pending.Keys)
-                    if (Definitions.ContainsKey(id))
-                        throw new ArgumentException("Duplicate graph node type ID: " + id, nameof(provider));
-                foreach (var entry in pending) Definitions.Add(entry.Key, entry.Value);
-            }
-        }
+        /// <exception cref="ArgumentException">Definitions or identifiers are invalid or duplicated.</exception>
+        public static void RegisterGraphNodes(IStudioGraphNodeProvider provider) =>
+            KitchenLib.Studio.Editor.Graph.StudioGraphNodeRegistry.Register(provider);
 
-        // Minimal registry seam. Production discovery/refresh integration is deliberately separate.
-        internal static IReadOnlyList<StudioGraphNodeDefinition> RegisteredGraphNodes
-        {
-            get { lock (RegistrationLock) return Array.AsReadOnly(Definitions.Values.ToArray()); }
-        }
+        internal static IReadOnlyList<StudioGraphNodeDefinition> RegisteredGraphNodes =>
+            KitchenLib.Studio.Editor.Graph.StudioGraphNodeRegistry.All;
     }
 
     internal static class StudioApiGuard
