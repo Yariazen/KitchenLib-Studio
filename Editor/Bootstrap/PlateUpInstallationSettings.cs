@@ -10,6 +10,8 @@ namespace KitchenLib.Studio.Editor.Bootstrap
         private static readonly PlateUpCatalogInstallationSettings Settings = new PlateUpCatalogInstallationSettings(Preferences, Discovery.ValidateSavedRoot);
         private static readonly PlateUpInstallationResolver Resolver = new PlateUpInstallationResolver(
             Preferences, Discovery.ValidateSavedRoot, Discovery.Discover,
+            PlateUpInstallationDiscovery.StandardGameRoot(PlateUpPlatformLayout.CurrentPlatform,
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFilesX86)),
             () => EditorUtility.OpenFolderPanel("Select PlateUp installation", SavedRoot ?? string.Empty, string.Empty));
 
         public static string SavedRoot => Settings.SavedRoot;
