@@ -5,12 +5,21 @@ param(
 
     [string]$UnityPath = $env:UNITY_PATH,
 
-    [string]$WorkingRoot = ([System.IO.Path]::GetTempPath())
+    [string]$WorkingRoot = ([System.IO.Path]::GetTempPath()),
+
+    [string]$RetainedLogPath
 )
 
 $ErrorActionPreference = 'Stop'
 $PackageRoot = [System.IO.Path]::GetFullPath($PackageRoot).TrimEnd([char[]]@('/', '\'))
 $WorkingRoot = [System.IO.Path]::GetFullPath($WorkingRoot).TrimEnd([char[]]@('/', '\'))
+if (-not [string]::IsNullOrWhiteSpace($RetainedLogPath)) {
+    $RetainedLogPath = [System.IO.Path]::GetFullPath($RetainedLogPath)
+    $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
+    if ($RetainedLogPath.StartsWith($PackageRoot + [System.IO.Path]::DirectorySeparatorChar, $pathComparison)) {
+        throw 'RetainedLogPath must be outside the package checkout.'
+    }
+}
 if ([string]::IsNullOrWhiteSpace($UnityPath)) {
     throw 'UnityPath is required (or set UNITY_PATH) and must point to Unity 2020.3.48f1.'
 }
@@ -82,6 +91,9 @@ try {
     if (-not (Test-Path -LiteralPath $logPath -PathType Leaf)) {
         throw 'Unity did not produce an import log.'
     }
+    if (-not [string]::IsNullOrWhiteSpace($RetainedLogPath)) {
+        Copy-Item -LiteralPath $logPath -Destination $RetainedLogPath -Force
+    }
     $log = Get-Content -LiteralPath $logPath -Raw
     if ($unityExitCode -ne 0) { throw "Unity import failed with exit code $unityExitCode.`n$log" }
     if ($log -notmatch "Version is '2020\.3\.48f1") {
@@ -96,7 +108,8 @@ try {
         '(?im)^.*Failed to resolve packages.*$',
         '(?im)^.*An error occurred while resolving packages.*$',
         '(?im)^.*Cannot resolve package.*$',
-        '(?im)^.*Assembly [^\r\n]* (?:not found|could not be resolved).*$'
+        '(?im)^.*Assembly [^\r\n]* (?:not found|could not be resolved).*$',
+        '(?im)^Assembly ''[^''\r\n]+'' will not be loaded due to errors:\s*$'
     )
     $problems = [System.Collections.Generic.List[string]]::new()
     foreach ($pattern in $failurePatterns) {
@@ -105,7 +118,7 @@ try {
         }
     }
     if ($problems.Count -gt 0) {
-        throw "Unity import log contains compiler/package failures:`n$(@($problems | Sort-Object -Unique) -join "`n")"
+        throw "Unity import log contains compiler, package, or assembly-load failures:`n$(@($problems | Sort-Object -Unique) -join "`n")"
     }
 }
 finally {
@@ -118,4 +131,4 @@ finally {
     }
 }
 
-Write-Output 'PASS: clean Unity 2020.3.48f1 package import completed with no package checkout writes or compiler/package errors.'
+Write-Output 'PASS: clean Unity 2020.3.48f1 package import completed with no checkout writes or compiler, package, or assembly-load errors.'

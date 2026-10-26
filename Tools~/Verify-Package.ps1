@@ -153,6 +153,25 @@ foreach ($file in $relativeFiles | Where-Object { [IO.Path]::GetExtension($_) -i
     if ($file -cnotin @($expectedHashes.Keys)) { Add-Failure "Unlisted third-party payload: $file" }
 }
 
+$expectedPluginImporters = [ordered]@{
+    'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.dll.meta' = @{ Guid = 'c1167d815e9d46cc9c49acf9252f34a6'; ValidateReferences = 1 }
+    'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.MonoCecil.dll.meta' = @{ Guid = '93b06b8f20d345d9ae6d92ce856d79a5'; ValidateReferences = 0 }
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.dll.meta' = @{ Guid = '4a346378179547aca372cbefdfca414b'; ValidateReferences = 1 }
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.Rocks.dll.meta' = @{ Guid = 'b800b9713b2344a9b5875f7f6d463850'; ValidateReferences = 1 }
+}
+foreach ($entry in $expectedPluginImporters.GetEnumerator()) {
+    $metaPath = Join-Path $packageRoot $entry.Key
+    if (-not (Test-Path -LiteralPath $metaPath -PathType Leaf)) { continue }
+    $meta = Get-Content -LiteralPath $metaPath -Raw
+    if (-not $meta.Contains("guid: $($entry.Value.Guid)")) { Add-Failure "Plugin GUID changed: $($entry.Key)" }
+    if (-not $meta.Contains('isExplicitlyReferenced: 1') -or
+        -not $meta.Contains("validateReferences: $($entry.Value.ValidateReferences)") -or
+        $meta -notmatch '(?s)Any:\s+second:\s+enabled: 0' -or
+        $meta -notmatch '(?s)Editor: Editor\s+second:\s+enabled: 1') {
+        Add-Failure "Plugin importer settings differ from the audited editor-only configuration: $($entry.Key)"
+    }
+}
+
 # The upstream license texts are audited separately from the five byte-exact binary/data payloads.
 # Decode strictly as UTF-8 and normalize CRLF/CR to LF so Git's checkout line endings do not change the audit.
 $expectedLicenseHashes = [ordered]@{
