@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c69a57905ee4864dbef63310dfe9870, type: 3}
+  m_Name: 9666c66c9d941a7469507c911eb834a2
+  m_EditorClassIdentifier: 
+  _target: {fileID: 11400000, guid: 9666c66c9d941a7469507c911eb834a2, type: 2}
+  _descriptorFingerprint: 4DA7436A481E872A2CAF0E2047F861870289A75E3D55EA5E7180719FF7D29E73
+  _serializedFields:
+  - _declaringType: KitchenData.LocalisedGameDataObject`1
+    _fieldName: Info
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 8
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales:
+        - _locale: 1
+          _displayName: Generic Appliance
+          _description: Mixed GDO proof appliance
+          _flavourText: 
+  - _declaringType: KitchenData.Appliance
+    _fieldName: CrateItem
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 11400000, guid: 5b24f1bbb04b7fc4eb9d0e214ebf99d7, type: 2}
+          _id: -1950922434
+          _expectedType: KitchenData.Item
+          _providerKey: 
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Appliance
+    _fieldName: RequiresIngredientForShop
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 6
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 11400000, guid: 5b24f1bbb04b7fc4eb9d0e214ebf99d7, type: 2}
+          _id: -1950922434
+          _expectedType: KitchenData.Item
+          _providerKey: 
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []

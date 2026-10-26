@@ -1,0 +1,11 @@
+{
+  "name": "KitchenLib.Studio.Validation.Editor",
+  "references": [
+    "Kitchen.GameData",
+    "KitchenLib.Studio.Editor",
+    "Sirenix.Serialization"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

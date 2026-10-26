@@ -1,0 +1,36 @@
+# Unity generated state
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Build and test output
+[Bb]uild/
+[Bb]uilds/
+[Bb]in/
+[Tt]est[Rr]esults/
+
+# IDE state
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.sln
+*.user
+*.suo
+*.tmp
+
+# Local KitchenLib Studio configuration
+KitchenLibStudio.local.json
+*.KitchenLibStudio.local.json
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Managed execution workspace
+.superpowers/
+.worktrees/

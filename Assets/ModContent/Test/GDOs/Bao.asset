@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1eced38df07317e4f81ff8ed2f218413, type: 3}
+  m_Name: Bao
+  m_EditorClassIdentifier: 
+  serializationData:
+    SerializedFormat: 0
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes: []
+  ID: -1096932688
+  ExpReward: 100
+  ExpMult:
+    Value: 0
+  CustomerMultiplier: 0
+  IsUnlockable: 1
+  HasSubOptions: 0
+  OptionCard1: {fileID: 0}
+  OptionCard2: {fileID: 0}
+  ParentOption: {fileID: 0}
+  UnlockGroup: 0
+  CardType: 0
+  MinimumFranchiseTier: 0
+  IsSpecificFranchiseTier: 0
+  SelectionBias: 0
+  HardcodedRequirements: []
+  HardcodedBlockers: []
+  BlocksAllOtherFood: 0
+  AllowedFoods: []
+  ForceFranchiseSetting: {fileID: 0}
+  ItemRewards: []
+  HeatCardDisplayedNumber: 0
+  Type: 1
+  Difficulty: 0
+  RewardOverride: 0
+  UnlockItemOverride: {fileID: 0}
+  HideInfoPanel: 0
+  SkipOwnRecipe: 0
+  AlsoAddRecipes: []
+  IconPrefab: {fileID: 0}
+  DisplayPrefab: {fileID: 0}
+  ImageKey: 
+  ResultingMenuItems: []
+  IsMainThatDoesNotNeedPlates: 0
+  AddsStatuses: 
+  AchievementName: 
+  StartingNameSet: []
+  IsSpeedrunDish: 0
+  HeatOverride: {fileID: 0}

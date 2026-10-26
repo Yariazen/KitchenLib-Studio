@@ -1,0 +1,393 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c69a57905ee4864dbef63310dfe9870, type: 3}
+  m_Name: 86662587501834342afb0f46413a3700
+  m_EditorClassIdentifier: 
+  _target: {fileID: 11400000, guid: 86662587501834342afb0f46413a3700, type: 2}
+  _descriptorFingerprint: 649F0F4AE051D9B380DC9BCE04CE53668A4A9D034624BE1E77BE6B3C82596510
+  _serializedFields:
+  - _declaringType: KitchenData.LocalisedGameDataObject`1
+    _fieldName: Info
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 8
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales:
+        - _locale: 1
+          _displayName: Proof Dish
+          _description: English proof description
+          _flavourText: English proof flavour
+        - _locale: 2
+          _displayName: Plat Preuve
+          _description: "Description fran\xE7aise"
+          _flavourText: "Saveur fran\xE7aise"
+  - _declaringType: KitchenData.Unlock
+    _fieldName: HardcodedRequirements
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 6
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -1950922445
+          _expectedType: KitchenData.Unlock
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Unlock
+    _fieldName: HardcodedBlockers
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 6
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -1950922445
+          _expectedType: KitchenData.Unlock
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: UnlockItemOverride
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -201067776
+          _expectedType: KitchenData.Item
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: ResultingMenuItems
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 6
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 5
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members:
+        - _name: DynamicMenuIngredient
+          _valueNodeId: 3
+        - _name: DynamicMenuType
+          _valueNodeId: 4
+        - _name: Item
+          _valueNodeId: 5
+        - _name: Phase
+          _valueNodeId: 6
+        - _name: Weight
+          _valueNodeId: 7
+        _valueNodeIds: 
+        _locales: []
+      - _id: 3
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -201067776
+          _expectedType: KitchenData.Item
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+      - _id: 4
+        _kind: 2
+        _scalar: 0
+        _hasScalar: 1
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+      - _id: 5
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -201067776
+          _expectedType: KitchenData.Item
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+      - _id: 6
+        _kind: 2
+        _scalar: 0
+        _hasScalar: 1
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+      - _id: 7
+        _kind: 1
+        _scalar: 1
+        _hasScalar: 1
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: IngredientsUnlocks
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 5
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members:
+        - _name: Ingredient
+          _valueNodeId: 3
+        - _name: MenuItem
+          _valueNodeId: 4
+        _valueNodeIds: 
+        _locales: []
+      - _id: 3
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -201067776
+          _expectedType: KitchenData.Item
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+      - _id: 4
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 1818895897
+          _expectedType: KitchenData.ItemGroup
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: MinimumIngredients
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 02000000
+        _locales: []
+      - _id: 2
+        _kind: 4
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: -201067776
+          _expectedType: KitchenData.Item
+          _providerKey: vanilla:plateup
+        _hasReference: 1
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: ExtraOrderUnlocks
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: RequiredProcesses
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: BlockProviders
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []
+  - _declaringType: KitchenData.Dish
+    _fieldName: BeneficialIngredients
+    _graph:
+      _rootNodeId: 1
+      _nodes:
+      - _id: 1
+        _kind: 7
+        _scalar: 
+        _hasScalar: 0
+        _reference:
+          _asset: {fileID: 0}
+          _id: 0
+          _expectedType: 
+          _providerKey: 
+        _hasReference: 0
+        _members: []
+        _valueNodeIds: 
+        _locales: []

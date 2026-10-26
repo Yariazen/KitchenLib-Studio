@@ -1,0 +1,33 @@
+.kls-graph-icon-button {
+    margin-left: 2px;
+    margin-right: 2px;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.kls-graph-icon-button:hover,
+.kls-graph-icon-button:focus {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.kls-graph-reorder-cluster {
+    flex-direction: row;
+    opacity: 0.35;
+}
+
+.kls-gdo-node--relationship:hover .kls-graph-reorder-cluster,
+.kls-gdo-node--relationship.selected .kls-graph-reorder-cluster {
+    opacity: 1;
+}
+
+.kls-graph-reorder-button:focus {
+    opacity: 1;
+}
+
+.kls-graph-reorder-button:disabled {
+    opacity: 0.35;
+}
+

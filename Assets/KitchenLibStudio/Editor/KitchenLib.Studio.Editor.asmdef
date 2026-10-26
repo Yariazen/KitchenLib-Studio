@@ -1,0 +1,17 @@
+{
+  "name": "KitchenLib.Studio.Editor",
+  "references": [
+    "Kitchen.GameData",
+    "Sirenix.Serialization"
+  ],
+  "precompiledReferences": [
+    "AssetsTools.NET.dll",
+    "AssetsTools.NET.MonoCecil.dll",
+    "Mono.Cecil.dll",
+    "Mono.Cecil.Rocks.dll"
+  ],
+  "overrideReferences": true,
+  "includePlatforms": [
+    "Editor"
+  ]
+}
