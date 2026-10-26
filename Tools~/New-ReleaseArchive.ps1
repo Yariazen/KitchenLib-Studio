@@ -47,6 +47,8 @@ if ($gateExitCode -ne 0) {
 $rootAllowlist = @(
     'package.json',
     'package.json.meta',
+    'README.md',
+    'README.md.meta',
     'CHANGELOG.md',
     'CHANGELOG.md.meta',
     'LICENSE.md',

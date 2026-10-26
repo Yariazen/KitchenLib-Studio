@@ -22,6 +22,8 @@ function Require-File([string]$RelativePath) {
 $requiredFiles = @(
     'package.json',
     'package.json.meta',
+    'README.md',
+    'README.md.meta',
     'CHANGELOG.md',
     'CHANGELOG.md.meta',
     'LICENSE.md',
@@ -29,6 +31,8 @@ $requiredFiles = @(
     'Third Party Notices.md',
     'Third Party Notices.md.meta',
     'Documentation~/index.md',
+    'Documentation~/release-process.md',
+    'Documentation~/release-process.md.meta',
     'Editor/KitchenLib.Studio.Editor.asmdef',
     'Editor/Bootstrap/KitchenLib.Studio.Bootstrap.asmdef',
     'Editor/ThirdParty/AssetsTools.NET/LICENSE.txt',
@@ -91,6 +95,18 @@ try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
     if ($package.name -cne 'com.kitchenlib.studio') { Add-Failure "package.json name must be com.kitchenlib.studio." }
     if ($package.version -cne '0.1.0-alpha.1') { Add-Failure "package.json version must be 0.1.0-alpha.1." }
+    $expectedRepositoryUrl = 'https://github.com/Yariazen/KitchenLib-Studio.git'
+    if ($package.repository.type -cne 'git' -or $package.repository.url -cne $expectedRepositoryUrl) {
+        Add-Failure "package.json repository must be $expectedRepositoryUrl."
+    }
+    $readmePath = Join-Path $packageRoot 'README.md'
+    if (Test-Path -LiteralPath $readmePath -PathType Leaf) {
+        $readme = Get-Content -LiteralPath $readmePath -Raw
+        $taggedUrl = "$expectedRepositoryUrl#v$($package.version)"
+        if (-not $readme.Contains($taggedUrl)) {
+            Add-Failure "README.md must recommend the package repository URL pinned to v$($package.version)."
+        }
+    }
     if ($package.displayName -cne 'KitchenLib Studio') { Add-Failure "package.json displayName must be KitchenLib Studio." }
     if ($package.unity -cne '2020.3') { Add-Failure "package.json unity must be 2020.3." }
     if ($package.license -cne 'MIT') { Add-Failure 'package.json license must be MIT.' }
