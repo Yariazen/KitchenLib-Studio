@@ -4,7 +4,7 @@
   "displayName": "KitchenLib Studio",
   "description": "Editor tooling for authoring PlateUp game data and building mod AssetBundles.",
   "unity": "2020.3",
-  "license": "SEE LICENSE IN LICENSE.md",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git"

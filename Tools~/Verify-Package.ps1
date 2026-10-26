@@ -92,7 +92,7 @@ try {
     if ($package.version -cne '0.1.0-alpha.1') { Add-Failure "package.json version must be 0.1.0-alpha.1." }
     if ($package.displayName -cne 'KitchenLib Studio') { Add-Failure "package.json displayName must be KitchenLib Studio." }
     if ($package.unity -cne '2020.3') { Add-Failure "package.json unity must be 2020.3." }
-    if ($package.license -cne 'SEE LICENSE IN LICENSE.md') { Add-Failure "package.json must point to LICENSE.md." }
+    if ($package.license -cne 'MIT') { Add-Failure 'package.json license must be MIT.' }
     $expectedDependencies = [ordered]@{
         'com.unity.textmeshpro' = '3.0.6'
         'com.unity.modules.assetbundle' = '1.0.0'
@@ -319,11 +319,36 @@ try {
 catch { Add-Failure "Public API audit failed (PowerShell 7 with its bundled C# parser is required): $($_.Exception.Message)" }
 
 $licenseText = if (Test-Path -LiteralPath (Join-Path $packageRoot 'LICENSE.md')) { Get-Content -LiteralPath (Join-Path $packageRoot 'LICENSE.md') -Raw } else { '' }
-if ($licenseText -match '(?i)release-blocking placeholder|all rights reserved') {
-    Add-Failure 'Original KitchenLib Studio license is still the all-rights-reserved release-blocking placeholder.'
+$normalizedLicense = [regex]::Replace($licenseText, '\s+', ' ').Trim()
+$mitGrant = 'Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:'
+$mitCondition = 'The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.'
+$mitWarranty = 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
+if ($normalizedLicense -cnotmatch [regex]::Escape('MIT License') -or
+    $normalizedLicense -cnotmatch [regex]::Escape('Copyright (c) 2026 Yariazen') -or
+    -not $normalizedLicense.Contains($mitGrant) -or
+    -not $normalizedLicense.Contains($mitCondition) -or
+    -not $normalizedLicense.Contains($mitWarranty)) {
+    Add-Failure 'LICENSE.md must contain the canonical 2026 Yariazen MIT permission, condition, and warranty text.'
+}
+if ($normalizedLicense -notmatch '(?i)only to original KitchenLib Studio code and documentation' -or
+    $normalizedLicense -notmatch '(?i)Third Party Notices\.md') {
+    Add-Failure 'LICENSE.md must scope MIT to original KitchenLib Studio code and documentation and refer to Third Party Notices.md.'
 }
 
 $notices = if (Test-Path -LiteralPath (Join-Path $packageRoot 'Third Party Notices.md')) { Get-Content -LiteralPath (Join-Path $packageRoot 'Third Party Notices.md') -Raw } else { '' }
+if ($notices -notmatch '(?i)not relicensed under the KitchenLib Studio MIT license') {
+    Add-Failure 'Third Party Notices.md must say bundled third-party material is not relicensed under the KitchenLib Studio MIT license.'
+}
+foreach ($entry in $expectedHashes.GetEnumerator()) {
+    $payload = [System.IO.Path]::GetFileName($entry.Key)
+    if ($notices -notmatch "(?m)^\| $([regex]::Escape($payload)) \|[^`r`n]*$($entry.Value)[^`r`n]*\|") {
+        Add-Failure "Third-party notice must inventory the exact audited payload and SHA-256: $payload"
+    }
+}
+$payloadRows = @($notices -split "`r?`n" | Where-Object { $_ -match '^\| (?:[^|]+\.(?:dll|tpk)) \|' })
+if ($payloadRows.Count -ne $expectedHashes.Count) {
+    Add-Failure 'Third Party Notices.md must inventory exactly five audited payloads.'
+}
 foreach ($component in @('AssetsTools.NET 3.0.5', 'AssetsTools.NET.MonoCecil 3.0.4', 'Mono.Cecil 0.11.6')) {
     if ($notices -notmatch [regex]::Escape($component)) { Add-Failure "Third-party notice is incomplete: $component" }
 }

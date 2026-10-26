@@ -2,6 +2,8 @@
 
 KitchenLib Studio includes the following editor-only dependencies under `Editor/ThirdParty/AssetsTools.NET/`. Their existing binaries, Unity import metadata, README, and license texts are preserved. They must not be included in player builds or generated mod bundles.
 
+These bundled third-party binaries and data are not relicensed under the KitchenLib Studio MIT license. Their notices and upstream license texts govern where applicable. No license is claimed or granted here for `classdata.tpk` or AssetRipper/TypeTreeDumps.
+
 | Component | Version / provenance | SHA-256 | License notice |
 | --- | --- | --- | --- |
 | AssetsTools.NET.dll | NuGet AssetsTools.NET 3.0.5, .NET Standard 2.0 | `6B03D589163623B67620FBBC6F425DCB47F856584BD3AB1A34C896B2666372E4` | MIT; copyright (c) 2020 nesrak1; complete text in `LICENSE-AssetsTools.NET.txt` |
