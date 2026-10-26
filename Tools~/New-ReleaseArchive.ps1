@@ -13,11 +13,12 @@ $ErrorActionPreference = 'Stop'
 $PackageRoot = [System.IO.Path]::GetFullPath($PackageRoot).TrimEnd([char[]]@('/', '\'))
 $DestinationPath = [System.IO.Path]::GetFullPath($DestinationPath)
 $destinationParent = Split-Path -Parent $DestinationPath
+$pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
 
 if (-not (Test-Path -LiteralPath (Join-Path $PackageRoot 'package.json') -PathType Leaf)) {
     throw "PackageRoot is not a Unity package: $PackageRoot"
 }
-if ($DestinationPath.StartsWith($PackageRoot + [System.IO.Path]::DirectorySeparatorChar, [System.StringComparison]::OrdinalIgnoreCase)) {
+if ($DestinationPath.StartsWith($PackageRoot + [System.IO.Path]::DirectorySeparatorChar, $pathComparison)) {
     throw 'DestinationPath must be outside the package checkout.'
 }
 if ([System.IO.Path]::GetExtension($DestinationPath) -cne '.zip') {
@@ -29,6 +30,18 @@ if (Test-Path -LiteralPath $DestinationPath) {
 }
 if (-not (Test-Path -LiteralPath $destinationParent -PathType Container)) {
     New-Item -ItemType Directory -Path $destinationParent -Force | Out-Null
+}
+
+$packageGate = Join-Path $PackageRoot 'Tools~/Verify-Package.ps1'
+if (-not (Test-Path -LiteralPath $packageGate -PathType Leaf)) {
+    throw 'Package verification gate is missing; no release archive was created.'
+}
+$powerShellExecutable = (Get-Process -Id $PID).Path
+$gateOutput = @(& $powerShellExecutable -NoProfile -File $packageGate 2>&1 | ForEach-Object { $_.ToString() })
+$gateExitCode = $LASTEXITCODE
+foreach ($line in $gateOutput) { Write-Output $line }
+if ($gateExitCode -ne 0) {
+    throw "Package verification failed with exit code $gateExitCode; no release archive was created."
 }
 
 $rootAllowlist = @(

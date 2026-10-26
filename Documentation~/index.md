@@ -20,7 +20,7 @@ Repository verification creates its Unity project outside the checkout and disca
 pwsh -File Tools~/Verify-CleanUnityImport.ps1 -PackageRoot . -UnityPath <path-to-Unity-2020.3.48f1>
 ```
 
-`Tools~/New-ReleaseArchive.ps1` builds the distributable zip from an explicit allowlist containing package metadata, documentation, licenses, and `Editor/**`. It excludes `.github`, `Tools~`, Git metadata, and every non-package path. The GitHub Unity job is enabled only on a licensed self-hosted runner labeled `unity-2020.3`, with repository variable `KITCHENLIB_STUDIO_UNITY_IMPORT=enabled` and `UNITY_2020_3_PATH` pointing to Unity. It imports the package and never runs an internal test suite.
+`Tools~/New-ReleaseArchive.ps1` first requires the production-only package/license gate to pass, then builds the distributable zip from an explicit allowlist containing package metadata, documentation, licenses, and `Editor/**`. A red gate produces no archive. The archive excludes `.github`, `Tools~`, Git metadata, and every non-package path. The GitHub Unity job is enabled only on a licensed self-hosted runner labeled `unity-2020.3`, with repository variable `KITCHENLIB_STUDIO_UNITY_IMPORT=enabled` and `UNITY_2020_3_PATH` pointing to Unity. It imports the package and never runs an internal test suite.
 
 ## Generated data and source control
 
