@@ -8,7 +8,7 @@
 [Rr]ecordings/
 
 # Build and test output
-[Bb]uild/
+/[Bb]uild/
 [Bb]uilds/
 [Bb]in/
 [Tt]est[Rr]esults/

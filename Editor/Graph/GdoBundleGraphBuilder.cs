@@ -24,10 +24,17 @@ namespace KitchenLib.Studio.Editor.Graph
                     "Build", SafeName(graph.BundleName), "content");
             }
 
+            using (StudioBuildProcessorRegistry.BeginBuild())
+            using (var journal = StudioBuildProcessorRegistry.HasProcessors ? new StudioBuildAuthoringJournal(graph) : null)
+                return BuildCore(graph, outputRoot, journal == null);
+        }
+
+        private static BundleBuildResult BuildCore(GdoBundleGraphAsset graph, string outputRoot, bool recordUndo)
+        {
             GdoGraphDiagnostic[] preflight = GdoBundleGraphValidator.Validate(graph)
                 .Where(issue => issue.Severity == ValidationSeverity.Error || issue.Severity == ValidationSeverity.Fatal).ToArray();
             if (preflight.Length != 0) return Failure(graph, outputRoot, preflight);
-            if (!GdoGraphProjectionApplier.TryApply(graph, out IReadOnlyList<GdoGraphDiagnostic> applyDiagnostics, false))
+            if (!GdoGraphProjectionApplier.TryApply(graph, out IReadOnlyList<GdoGraphDiagnostic> applyDiagnostics, false, false, recordUndo))
                 return Failure(graph, outputRoot, applyDiagnostics);
             GdoGraphDiagnostic[] diagnostics = GdoBundleGraphValidator.Validate(graph)
                 .Where(issue => issue.Severity == ValidationSeverity.Error || issue.Severity == ValidationSeverity.Fatal).ToArray();
@@ -36,7 +43,8 @@ namespace KitchenLib.Studio.Editor.Graph
             string[] assetPaths = graph.Nodes.Where(node => node.Kind == GdoGraphNodeKind.Local && !node.IsBroken)
                 .Select(node => AssetDatabase.GetAssetPath(node.Asset)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
             AssetDatabase.SaveAssets();
-            return GdoBundleBuilder.Build(new BundleBuildRequest(assetPaths, outputRoot, graph.BundleFileName));
+            return GdoBundleBuilder.Build(new BundleBuildRequest(assetPaths, outputRoot, graph.BundleFileName,
+                AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(graph))));
         }
 
         private static BundleBuildResult Failure(GdoBundleGraphAsset graph, string outputRoot,

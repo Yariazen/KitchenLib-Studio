@@ -12,7 +12,7 @@ https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git#v0.1.0-alp
 
 This is an intentional placeholder, not an installable repository. Version `0.1.0-alpha.1` is owner-only and is installed from a local checkout. Before public distribution, replace the URL and original-code license; see `LICENSE.md`. Exact provenance and acknowledgments for the bundled type-tree data are recorded in `Third Party Notices.md`.
 
-The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license is resolved.
+The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1` using PowerShell 7 and its bundled C# parser. The gate enumerates the explicit supported public-type allowlist and checks public/protected signature fingerprints, including imports, parameters, accessors, enums and constants. It rejects implementation leaks and unreviewed contract changes. The gate remains red until the original-code license is resolved.
 
 Repository verification creates its Unity project outside the checkout and discards it after import. Run a local clean import with:
 
@@ -48,3 +48,7 @@ Generation stages deterministic sources, assembly definitions, stable metadata, 
 Reconciliation compares the saved generator identity (format revision and package version) and source-closure fingerprint with the current package and selected installation. Changed or temporarily unreadable sources keep the authoring gate closed and reopen setup, without a supported-build check. Complete matching output is reused when Generate Mirrors is requested; its files and completion state are not rewritten. Generation-format changes must increment the generator's format revision.
 
 See [Authoring bundle projects](authoring.md) for the authoring workflow.
+
+Supported editor extensions live in `KitchenLib.Studio.Editor.Api` and its `Authoring`, `Graph`, `Validation` and `Build` namespaces, within the existing editor-only authoring assembly. Register declarative graph providers and pre-build processors explicitly each domain. Studio owns rendering, persistence, validation, temporary build projection, audit and final bundle verification. [The authoring reference](authoring.md#pre-build-processors) lists every supported type and its bounded pre-build semantics; implementation windows, repositories, readers and builders are internal. Runtime mod APIs are outside this surface.
+
+During `0.x`, incompatible C# API changes are documented in the changelog. Strict semantic-version compatibility starts at `1.0.0`; later breaking API changes require a major version. Serialized node identities, field/port keys and preservation of unknown data are protected independently from the first alpha.

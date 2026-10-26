@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using KitchenLib.Studio.Editor.Api.Authoring;
+using KitchenLib.Studio.Editor.Api.Build;
 using KitchenLib.Studio.Editor.Api.Graph;
 
 namespace KitchenLib.Studio.Editor.Api
@@ -22,6 +23,15 @@ namespace KitchenLib.Studio.Editor.Api
         /// <exception cref="ArgumentException">Definitions or identifiers are invalid or duplicated.</exception>
         public static void RegisterGraphNodes(IStudioGraphNodeProvider provider) =>
             KitchenLib.Studio.Editor.Graph.StudioGraphNodeRegistry.Register(provider);
+
+        /// <summary>
+        /// Registers a processor atomically on the Unity editor thread. IDs use namespace:name syntax.
+        /// Execution is ordered by Order, then ordinal ID. Register again after each domain reload.
+        /// Invalid or duplicate IDs, reentrant registration and registration during a build throw;
+        /// property exceptions propagate.
+        /// </summary>
+        public static void RegisterBuildProcessor(IStudioBuildProcessor processor) =>
+            KitchenLib.Studio.Editor.Packaging.StudioBuildProcessorRegistry.Register(processor);
 
         internal static IReadOnlyList<StudioGraphNodeDefinition> RegisteredGraphNodes =>
             KitchenLib.Studio.Editor.Graph.StudioGraphNodeRegistry.All;

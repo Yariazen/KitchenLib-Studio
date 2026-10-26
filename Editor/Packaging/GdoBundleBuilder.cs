@@ -15,16 +15,19 @@ namespace KitchenLib.Studio.Editor.Packaging
 {
     internal sealed class BundleBuildRequest
     {
-        public BundleBuildRequest(IReadOnlyList<string> assetPaths, string outputRoot, string bundleFileName)
+        public BundleBuildRequest(IReadOnlyList<string> assetPaths, string outputRoot, string bundleFileName,
+            string productId = "selected-assets")
         {
             AssetPaths = assetPaths;
             OutputRoot = outputRoot;
             BundleFileName = bundleFileName;
+            ProductId = productId;
         }
 
         public IReadOnlyList<string> AssetPaths { get; }
         public string OutputRoot { get; }
         public string BundleFileName { get; }
+        public string ProductId { get; }
     }
 
     internal sealed class BundleBuildResult
@@ -48,6 +51,11 @@ namespace KitchenLib.Studio.Editor.Packaging
         public const string LinkManifestAssetPath = StagingRoot + "/" + GdoOverlayManifest.AssetName;
 
         public static BundleBuildResult Build(BundleBuildRequest request)
+        {
+            using (StudioBuildProcessorRegistry.BeginBuild()) return Prepare(request);
+        }
+
+        private static BundleBuildResult Prepare(BundleBuildRequest request)
         {
             if (request == null)
             {
@@ -88,6 +96,40 @@ namespace KitchenLib.Studio.Editor.Packaging
             {
                 return new BundleBuildResult(bundlePath, issues);
             }
+            using (var preparation = StudioBuildProcessorRegistry.HasProcessors ? new StudioBuildPreparation(assets, companions) : null)
+            {
+                string json = null;
+                try
+                {
+                    // Validate the original authoring before any processor can replace a value.
+                    if (companions.Count > 0)
+                        json = GdoOverlayManifestWriter.Write(assets, companions, KitchenLibStudioGeneratedPaths.SchemaPath);
+                    if (preparation != null)
+                    {
+                        StudioBuildProcessorRegistry.Process(preparation, request.ProductId, issues);
+                        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error || issue.Severity == ValidationSeverity.Fatal))
+                            return new BundleBuildResult(bundlePath, issues);
+                        companions = preparation.Companions;
+                        issues.AddRange(GdoValidator.Validate(assets));
+                        issues.AddRange(GdoValidator.ValidateLinks(assets, companions));
+                        if (issues.Any(issue => issue.Severity == ValidationSeverity.Error || issue.Severity == ValidationSeverity.Fatal))
+                            return new BundleBuildResult(bundlePath, issues);
+                        if (companions.Count > 0)
+                            json = GdoOverlayManifestWriter.Write(assets, companions, KitchenLibStudioGeneratedPaths.SchemaPath);
+                    }
+                }
+                catch (Exception)
+                {
+                    issues.Add(StudioBuildProcessorRegistry.Error("BuildPreparation", "Authored or processed companion data failed mandatory manifest validation."));
+                    return new BundleBuildResult(bundlePath, issues);
+                }
+                return BuildValidated(request, assets, companions, bundlePath, json, issues);
+            }
+        }
+
+        private static BundleBuildResult BuildValidated(BundleBuildRequest request, List<GameDataObject> assets,
+            IReadOnlyList<GdoOverlayAuthoringAsset> companions, string bundlePath, string json, List<ValidationIssue> issues)
+        {
             ExpectedGdo[] expected = assets.Select(asset => new ExpectedGdo(asset.GetType().FullName,
                 asset.GetType().Assembly.GetName().Name, asset.name, asset.ID,
                 asset is GameDifficultySettings difficulty && difficulty.IsActive, companions.Count > 0)).ToArray();
@@ -98,18 +140,6 @@ namespace KitchenLib.Studio.Editor.Packaging
                 var bundleAssetPaths = request.AssetPaths.ToList();
                 if (companions.Count > 0)
                 {
-                    string mirrorPath = KitchenLibStudioGeneratedPaths.SchemaPath;
-                    string json;
-                    try
-                    {
-                        json = GdoOverlayManifestWriter.Write(assets, companions, mirrorPath);
-                    }
-                    catch (Exception exception)
-                    {
-                        issues.Add(new ValidationIssue(ValidationSeverity.Error, LinkManifestAssetPath, string.Empty, exception.Message));
-                        return new BundleBuildResult(bundlePath, issues);
-                    }
-
                     CreateStagedManifest(json);
                     bundleAssetPaths.Add(LinkManifestAssetPath);
                 }

@@ -168,6 +168,129 @@ catch {
     Add-Failure "Assembly definition audit failed: $($_.Exception.Message)"
 }
 
+# Source-level public API audit uses the C# parser bundled with PowerShell 7, not regex visibility guesses.
+# Signature fingerprints include imports, type/base declarations, public/protected members, parameters,
+# accessors, enum values and constants, but exclude implementation bodies and documentation trivia.
+function Get-SignatureTokens($Node, [int]$End = [int]::MaxValue) {
+    return (@($Node.DescendantTokens() | Where-Object { $_.SpanStart -lt $End } | ForEach-Object { $_.Text }) -join ' ')
+}
+
+function Get-PublicTypes([string]$Source, [string]$Path) {
+    $tree = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source)
+    $syntax = $tree.GetRoot()
+    # Audit every conditional branch, including UNITY_EDITOR and future extension symbols.
+    # Remove only parser-recognized conditional directives, never matching text inside a string.
+    $directives = @($syntax.DescendantTrivia() | Where-Object {
+        $_.HasStructure -and $_.GetStructure().GetType().Name -in @(
+            'IfDirectiveTriviaSyntax', 'ElifDirectiveTriviaSyntax', 'ElseDirectiveTriviaSyntax', 'EndIfDirectiveTriviaSyntax')
+    } | Sort-Object { $_.FullSpan.Start } -Descending)
+    foreach ($directive in $directives) {
+        $Source = $Source.Remove($directive.FullSpan.Start, $directive.FullSpan.Length)
+    }
+    if ($directives.Count -gt 0) { $syntax = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source).GetRoot() }
+    foreach ($node in $syntax.DescendantNodes()) {
+        if ($node -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.BaseTypeDeclarationSyntax] -and
+            $node -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.DelegateDeclarationSyntax]) { continue }
+        $ancestors = @($node.Ancestors())
+        $containers = @($ancestors | Where-Object { $_ -is [Microsoft.CodeAnalysis.CSharp.Syntax.BaseTypeDeclarationSyntax] })
+        $visible = $true
+        foreach ($part in @($node) + $containers) {
+            $modifiers = @($part.Modifiers | ForEach-Object { $_.ValueText })
+            if ('public' -notin $modifiers -and 'protected' -notin $modifiers -and
+                $part.Parent -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax]) { $visible = $false }
+        }
+        if (-not $visible) { continue }
+        $namespaces = @($ancestors | Where-Object { $_ -is [Microsoft.CodeAnalysis.CSharp.Syntax.BaseNamespaceDeclarationSyntax] } | ForEach-Object { $_.Name.ToString() })
+        [array]::Reverse($namespaces)
+        $parents = @($containers | ForEach-Object { $_.Identifier.ValueText })
+        [array]::Reverse($parents)
+        $name = (@($namespaces) + @($parents) + @($node.Identifier.ValueText)) -join '.'
+        $parts = [System.Collections.Generic.List[string]]::new()
+        foreach ($using in $syntax.DescendantNodes() | Where-Object { $_ -is [Microsoft.CodeAnalysis.CSharp.Syntax.UsingDirectiveSyntax] }) {
+            $parts.Add((Get-SignatureTokens $using))
+        }
+        if ($node -is [Microsoft.CodeAnalysis.CSharp.Syntax.DelegateDeclarationSyntax]) {
+            $parts.Add((Get-SignatureTokens $node))
+        }
+        else {
+            $parts.Add((Get-SignatureTokens $node $node.OpenBraceToken.SpanStart))
+            foreach ($member in $node.Members) {
+                if ($node -is [Microsoft.CodeAnalysis.CSharp.Syntax.EnumDeclarationSyntax]) {
+                    $parts.Add((Get-SignatureTokens $member)); continue
+                }
+                $mods = @($member.Modifiers | ForEach-Object { $_.ValueText })
+                if ('public' -notin $mods -and 'protected' -notin $mods -and
+                    $node -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.InterfaceDeclarationSyntax]) { continue }
+                if ($member -is [Microsoft.CodeAnalysis.CSharp.Syntax.BaseTypeDeclarationSyntax]) { continue }
+                if ($member -is [Microsoft.CodeAnalysis.CSharp.Syntax.BasePropertyDeclarationSyntax]) {
+                    $end = if ($null -ne $member.AccessorList) { $member.AccessorList.SpanStart } else { $member.ExpressionBody.SpanStart }
+                    $parts.Add((Get-SignatureTokens $member $end))
+                    if ($null -ne $member.AccessorList) {
+                        foreach ($accessor in $member.AccessorList.Accessors) {
+                            $parts.Add((@($accessor.Modifiers | ForEach-Object { $_.Text }) + @($accessor.Keyword.Text)) -join ' ')
+                        }
+                    } else { $parts.Add('get') }
+                }
+                elseif ($member -is [Microsoft.CodeAnalysis.CSharp.Syntax.BaseMethodDeclarationSyntax]) {
+                    $end = if ($null -ne $member.Body) { $member.Body.SpanStart } elseif ($null -ne $member.ExpressionBody) { $member.ExpressionBody.SpanStart } else { $member.SemicolonToken.SpanStart }
+                    $parts.Add((Get-SignatureTokens $member $end))
+                }
+                else { $parts.Add((Get-SignatureTokens $member)) }
+            }
+        }
+        $signature = $parts -join "`n"
+        $hasher = [System.Security.Cryptography.SHA256]::Create()
+        try { $hash = [BitConverter]::ToString($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($signature))).Replace('-', '') }
+        finally { $hasher.Dispose() }
+        [pscustomobject]@{ Name = $name; Hash = $hash; Path = $Path }
+    }
+}
+
+# Intentional supported contracts. The three serialized roots remain internal and need no public exemption.
+$supportedPublicTypes = @{
+    'KitchenLib.Studio.Editor.Api.Authoring.StudioAuthoringValue' = '8599F7EBA3E095AD20B856607D81DC2455727F4C426432A89D4015302EDD32AE'
+    'KitchenLib.Studio.Editor.Api.Authoring.StudioAuthoringValueKind' = '7D873C9859D2C74DE14055B89F83032CA4ABE99034BFE4A3D85C363B9C68014E'
+    'KitchenLib.Studio.Editor.Api.Build.IStudioBuildProcessor' = '372F445B2001E2275F850A4B010E30F28FCFEE7E977B244D4F2200BB00DEB942'
+    'KitchenLib.Studio.Editor.Api.Build.IStudioGraphNodeProjector' = '95AA647463C091A85A27AD6A0D0C702B0EAD06A88CDE4670B094C70ACBA2B724'
+    'KitchenLib.Studio.Editor.Api.Build.StudioBuildContext' = '6273C91F57B83516E6D16C5F82F422A9F7A3E43BE7C504C72D39E1518A98CAC1'
+    'KitchenLib.Studio.Editor.Api.Build.StudioBuildFieldChange' = 'AAA3BB2C411CB2E773405C62D2C9379EEA5041697C4E852CCE417BA9C1E220CC'
+    'KitchenLib.Studio.Editor.Api.Build.StudioBuildProcessorResult' = '33AA7ADF4013618B855EC75E261300EF529E3044D85DC021E5F628D3EB0DF481'
+    'KitchenLib.Studio.Editor.Api.Build.StudioBuildProjection' = 'A938807C297DE532CA290001F08C478E62B1CECFAFC43A6508740252C57D803D'
+    'KitchenLib.Studio.Editor.Api.Graph.IStudioGraphNodeProvider' = 'B4FAC62F771D59F2B7BACED076EEE213D4FFE31E7A84C739F7EAED42768C4638'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphConnection' = '0EB79715617A3CF23D8E88E66DFAC217EF7CB6CE722B0D1558ABEDBB52F4DDBC'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphEndpoint' = '475A01007AAD58A386063647E33EDEBCB416B09CB87F54B4A229BFDD576BDFC3'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphFieldDefinition' = '40DD852ACCD3A2DA2C2DA580C01AF339159AE4DCB16F81DB841EAA41358D3C39'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphNodeData' = '09623423F689A61D2A0D43F32297E884783B759B191487C39531D7EE0E2AA7A2'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphNodeDefinition' = '917F7E94D15695A99D54D81693579EC9BE2538FE98D0CBEBF99622EAD42FF375'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphPortCardinality' = '77DE78C3A5C046F66A289497B0453520FBDAFEE161FD74D7246E2DFD2F6DBB4E'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphPortDefinition' = '9380667FD25D8BA03FDFC13EABBE75DC11B357018F3DE34026EC095FB79D0A96'
+    'KitchenLib.Studio.Editor.Api.Graph.StudioGraphPortDirection' = '97C5C49414F58CA5DB23B74E5631D6B7E76604CCF46D75D515457A9CEE20252C'
+    'KitchenLib.Studio.Editor.Api.KitchenLibStudioApi' = 'B786B5E87A97B91C49D0AED9D13250E5C6B69343EDDA3AE26544C26D53D38702'
+    'KitchenLib.Studio.Editor.Api.Validation.IStudioGraphNodeValidator' = 'C38C8A1EA8B07E42DDAA745CE06FD19D9B602B0E92E5945AA5CAA93192535217'
+    'KitchenLib.Studio.Editor.Api.Validation.StudioValidationContext' = '925F5D628AC71EFEE861989C427734289E3990AB0C4E9B24CB89030F19D9111E'
+    'KitchenLib.Studio.Editor.Api.Validation.StudioValidationFinding' = '83CD430F75947C5B0380D959B87BBC7952B816FC9A1196A5745ED58220950988'
+    'KitchenLib.Studio.Editor.Api.Validation.StudioValidationSeverity' = 'CD6339E3B9E8EF39F41D4280DC8E876FD96612E3C4E59B105382A71D20B74473'
+}
+try {
+    $publicTypes = @(foreach ($file in $allFiles | Where-Object {
+        $_.Extension -eq '.cs' -and (Relative-Path $_.FullName).StartsWith('Editor/', [StringComparison]::Ordinal) -and
+        (Relative-Path $_.FullName) -notmatch '(^|/)[^/]+~/'
+    }) { Get-PublicTypes (Get-Content -LiteralPath $file.FullName -Raw) (Relative-Path $file.FullName) })
+    foreach ($type in $publicTypes) {
+        if (-not $supportedPublicTypes.ContainsKey($type.Name) -or -not $type.Path.StartsWith('Editor/Api/', [StringComparison]::Ordinal)) {
+            Add-Failure "Unsupported public implementation type: $($type.Name) ($($type.Path))"
+        } elseif ($supportedPublicTypes[$type.Name] -cne $type.Hash) {
+            Add-Failure "Supported API signature changed without an explicit surface audit: $($type.Name)"
+        }
+    }
+    foreach ($name in $supportedPublicTypes.Keys) {
+        if (@($publicTypes | Where-Object { $_.Name -ceq $name }).Count -ne 1) {
+            Add-Failure "Supported API type must occur exactly once: $name"
+        }
+    }
+}
+catch { Add-Failure "Public API audit failed (PowerShell 7 with its bundled C# parser is required): $($_.Exception.Message)" }
+
 $licenseText = if (Test-Path -LiteralPath (Join-Path $packageRoot 'LICENSE.md')) { Get-Content -LiteralPath (Join-Path $packageRoot 'LICENSE.md') -Raw } else { '' }
 if ($licenseText -match '(?i)release-blocking placeholder|all rights reserved') {
     Add-Failure 'Original KitchenLib Studio license is still the all-rights-reserved release-blocking placeholder.'
