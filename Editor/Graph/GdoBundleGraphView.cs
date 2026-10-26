@@ -104,11 +104,11 @@ namespace KitchenLib.Studio.Editor.Graph
 
             bool hasGraph = _graph != null;
             bool canCreate = hasGraph && _graph.HasAuthorIdentity;
-            foreach (string runtimeType in GdoGraphAssetCommands.SupportedRuntimeTypes)
+            foreach (GdoCreateMenuEntry entry in GdoCreateMenuCatalog.Build(
+                GdoGraphAssetCommands.SupportedRuntimeTypes))
             {
-                string captured = runtimeType;
-                string label = captured.Substring(captured.LastIndexOf('.') + 1);
-                evt.menu.AppendAction("Create GDO/" + label, _ => _createGdo?.Invoke(captured),
+                string captured = entry.RuntimeTypeName;
+                evt.menu.AppendAction("Create GDO/" + entry.MenuPath, _ => _createGdo?.Invoke(captured),
                     _ => canCreate && _createGdo != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             }
             evt.menu.AppendAction("Add Selected GDO", _ => _addSelected?.Invoke(),
