@@ -6,13 +6,13 @@ KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and bui
 
 ## Installation
 
-After a public release is published, open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the repository URL pinned to its release tag:
+Open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the repository URL pinned to this release tag:
 
 ```text
 https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.1
 ```
 
-The repository URL is configured, but the `v0.1.0-alpha.1` tag has not been published. Until that release is authorized, install the internal package from a local checkout. The MIT grant in `LICENSE.md` covers original KitchenLib Studio code and documentation only; exact provenance and acknowledgments for bundled third-party material are recorded in `Third Party Notices.md`.
+For an internal local checkout, choose **+ → Add package from disk** and select its root `package.json`. The MIT grant in `LICENSE.md` covers original KitchenLib Studio code and documentation only; exact provenance and acknowledgments for bundled third-party material are recorded in `Third Party Notices.md`.
 
 The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1` using PowerShell 7 and its bundled C# parser. The gate inspects every non-template C# source, rejects placement outside `Editor`, and compares public/protected signature fingerprints against the explicit ordinal public-type allowlist, including imports, parameters, accessors, enums and constants. Each conditional symbol configuration is parsed independently, with at most eight symbols per file; exceeding this bound or encountering invalid syntax fails the audit. It rejects implementation leaks and unreviewed contract changes.
 
