@@ -148,6 +148,9 @@ foreach ($entry in $expectedHashes.GetEnumerator()) {
         Add-Failure "Third-party payload hash changed without a completed audit: $($entry.Key)"
     }
 }
+foreach ($file in $relativeFiles | Where-Object { [IO.Path]::GetExtension($_) -ieq '.tpk' }) {
+    if ($file -cnotin @($expectedHashes.Keys)) { Add-Failure "Unlisted third-party payload: $file" }
+}
 
 # The upstream license texts are audited separately from the five byte-exact binary/data payloads.
 # Decode strictly as UTF-8 and normalize CRLF/CR to LF so Git's checkout line endings do not change the audit.
@@ -170,6 +173,23 @@ foreach ($entry in $expectedLicenseHashes.GetEnumerator()) {
     catch {
         Add-Failure "upstream license text is not readable UTF-8: $([System.IO.Path]::GetFileName($entry.Key))"
     }
+}
+
+# Every distributable file in the third-party tree must be accounted for. The five
+# byte-exact payloads are distinct from the two audited license texts, README,
+# and Unity metadata that support those payloads.
+$thirdPartyReadme = 'Editor/ThirdParty/AssetsTools.NET/README.md'
+$approvedThirdPartyContent = @($expectedHashes.Keys) + @($expectedLicenseHashes.Keys) + @($thirdPartyReadme)
+$approvedThirdPartyFiles = @($approvedThirdPartyContent) + @($approvedThirdPartyContent | ForEach-Object { "$_.meta" }) + @('Editor/ThirdParty.meta', 'Editor/ThirdParty/AssetsTools.NET.meta')
+$actualThirdPartyFiles = @($relativeFiles | Where-Object {
+    $_.StartsWith('Editor/ThirdParty/', [StringComparison]::Ordinal) -or
+    $_ -ceq 'Editor/ThirdParty.meta'
+})
+foreach ($file in $actualThirdPartyFiles) {
+    if ($file -cnotin $approvedThirdPartyFiles) { Add-Failure "Unlisted third-party file: $file" }
+}
+foreach ($file in $approvedThirdPartyFiles) {
+    if ($file -cnotin $actualThirdPartyFiles) { Add-Failure "Missing audited third-party file: $file" }
 }
 
 try {
