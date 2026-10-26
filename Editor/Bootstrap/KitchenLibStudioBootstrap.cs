@@ -11,6 +11,7 @@ namespace KitchenLib.Studio.Editor
 
         static KitchenLibStudioBootstrap()
         {
+            AtomicGeneratedDirectory.RecoverInterruptedPublication();
             // Disable synchronously: an absent publication must never await the first-run window.
             InvalidateMissingOutput();
             EditorApplication.delayCall += Reconcile;

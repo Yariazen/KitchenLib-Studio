@@ -1,5 +1,0 @@
-{
-  "name": "Kitchen.GameData",
-  "rootNamespace": "KitchenData",
-  "references": ["Sirenix.Serialization"]
-}

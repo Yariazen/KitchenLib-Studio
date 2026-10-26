@@ -118,7 +118,7 @@ namespace KitchenLib.Studio.Editor
             {
                 switch (stage)
                 {
-                    case "mirrors": MirrorGenerationMenu.GenerateMirrors(installation.GameRoot); break;
+                    case "mirrors": MirrorGenerationMenu.GenerateMirrors(installation, token); break;
                     case "queue-catalogues": KitchenLibStudioCatalogueBridge.Request(installation); break;
                     case "asset-refresh": KitchenLibStudioBootstrap.CompletePublication(); break;
                     default: throw new ArgumentOutOfRangeException(nameof(stage));

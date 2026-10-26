@@ -10,6 +10,7 @@
     "url": "https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git"
   },
   "dependencies": {
+    "com.unity.textmeshpro": "3.0.6",
     "com.unity.modules.assetbundle": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
     "com.unity.modules.imgui": "1.0.0",

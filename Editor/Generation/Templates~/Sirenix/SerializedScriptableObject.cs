@@ -4,6 +4,10 @@ using UnityEngine;
 
 namespace Sirenix.Serialization
 {
+    // Metadata marker only. Runtime Odin serialization is supplied by the game, not this authoring mirror.
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+    public sealed class OdinSerializeAttribute : Attribute { }
+
     public enum DataFormat { Binary, Nodes, JSON }
     public enum EntryType { Invalid }
 

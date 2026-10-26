@@ -25,4 +25,14 @@ Disposable fingerprints and cache state belong under `Library/KitchenLibStudio/`
 
 KitchenLib Studio targets the latest PlateUp Steam build tested at each package release. Generated mirrors and imported catalogs come from the user's local installation; do not commit or redistribute them with the package.
 
+## Local mirror generation
+
+Choose **KitchenLib Studio → Setup…**, select a PlateUp installation, and generate mirrors. The generator reads managed assembly metadata with the bundled Mono.Cecil; it never loads or executes game assemblies. It accepts the selected installation without comparing its build or version to a shipped schema. Each generation derives the required game-data types, fields, properties, enums, generic arguments and serialization attributes from that installation.
+
+Mirrors are data-only authoring types. They preserve serialized field names/order and the base-class hierarchy, while computed properties have inert accessors and game methods are not copied. Behavioral interfaces and generic constraints remain recorded in the schema; interface method contracts are not implemented. Unsupported overlay value shapes receive field diagnostics, and their fields remain in the generated mirrors. Runtime field mappings recognize direct reads, collection copies and instance selection calls from serialized fields in the installed IL; they are never guessed from field names.
+
+The package depends on **TextMeshPro 3.0.6** because game localization data references `TMPro.TMP_FontAsset`. It references Unity's `Unity.TextMeshPro` assembly instead of generating conflicting TMPro types. Other required game-owned support types are generated in assemblies retaining their original names.
+
+Generation stages deterministic sources, assembly definitions, stable metadata, schema and descriptor registries in `Library/KitchenLibStudio/Staging/<id>`. Unity compiles each staged assembly in dependency order before publication, with disposable compiler files under `Library/KitchenLibStudio/Compilation/<id>`. Publication swaps the complete directory into `Assets/KitchenLibStudio.Generated`, writes its completion state, refreshes Unity and enables authoring. A recovery record and the previous directory are retained until publication succeeds. Cancellation or failure restores the previous output, state and authoring gate; interrupted publication is recovered on the next editor startup. Package and PackageCache files are never generation destinations.
+
 See [Authoring bundle projects](authoring.md) for the authoring workflow.

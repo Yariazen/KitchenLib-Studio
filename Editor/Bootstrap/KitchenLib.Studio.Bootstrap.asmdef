@@ -3,5 +3,5 @@
   "references": [],
   "includePlatforms": ["Editor"],
   "overrideReferences": true,
-  "precompiledReferences": []
+  "precompiledReferences": ["Mono.Cecil.dll"]
 }

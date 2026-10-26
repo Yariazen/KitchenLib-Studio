@@ -1,0 +1,43 @@
+    public sealed class GdoValueDescriptorData
+    {
+        public readonly string Kind, RuntimeTypeName, ExpectedTypeName;
+        public readonly GdoValueDescriptorData Element;
+        public readonly GdoValueMemberDescriptorData[] Members;
+        public readonly string[] EnumValues;
+        public GdoValueDescriptorData(string kind, string runtimeTypeName, string expectedTypeName, GdoValueDescriptorData element, GdoValueMemberDescriptorData[] members, string[] enumValues)
+        { Kind = kind; RuntimeTypeName = runtimeTypeName; ExpectedTypeName = expectedTypeName; Element = element; Members = members; EnumValues = enumValues; }
+    }
+    public sealed class GdoValueMemberDescriptorData
+    {
+        public readonly string Name;
+        public readonly GdoValueDescriptorData Value;
+        public GdoValueMemberDescriptorData(string name, GdoValueDescriptorData value) { Name = name; Value = value; }
+    }
+    public sealed class GdoFieldDescriptorData
+    {
+        public readonly string DeclaringTypeName, Name, Classification;
+        public readonly bool IsRequired;
+        public readonly GdoValueDescriptorData Value;
+        public GdoFieldDescriptorData(string declaringTypeName, string name, string classification, bool isRequired, GdoValueDescriptorData value)
+        { DeclaringTypeName = declaringTypeName; Name = name; Classification = classification; IsRequired = isRequired; Value = value; }
+    }
+    public sealed class GdoDiagnosticData
+    {
+        public readonly string Path, Message;
+        public GdoDiagnosticData(string path, string message) { Path = path; Message = message; }
+    }
+    public sealed class GdoRuntimeFieldMappingData
+    {
+        public readonly string DeclaringTypeName, AuthoringFieldName, RuntimeFieldName, PopulationMethod;
+        public GdoRuntimeFieldMappingData(string declaringTypeName, string authoringFieldName, string runtimeFieldName, string populationMethod)
+        { DeclaringTypeName = declaringTypeName; AuthoringFieldName = authoringFieldName; RuntimeFieldName = runtimeFieldName; PopulationMethod = populationMethod; }
+    }
+    public sealed class GdoTypeDescriptorData
+    {
+        public readonly string RuntimeTypeName, BaseTypeName, Availability, DescriptorFingerprint;
+        public readonly bool IsAbstract, IsCreatable;
+        public readonly GdoDiagnosticData[] Diagnostics;
+        public readonly GdoFieldDescriptorData[] Fields;
+        public GdoTypeDescriptorData(string runtimeTypeName, string baseTypeName, bool isAbstract, bool isCreatable, string availability, GdoDiagnosticData[] diagnostics, GdoFieldDescriptorData[] fields, string descriptorFingerprint)
+        { RuntimeTypeName = runtimeTypeName; BaseTypeName = baseTypeName; IsAbstract = isAbstract; IsCreatable = isCreatable; Availability = availability; Diagnostics = diagnostics; Fields = fields; DescriptorFingerprint = descriptorFingerprint; }
+    }
