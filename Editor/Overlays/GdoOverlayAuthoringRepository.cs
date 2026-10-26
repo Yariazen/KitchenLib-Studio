@@ -22,7 +22,7 @@ namespace KitchenLib.Studio.Editor.Overlays
             if (existing != null) return existing;
             EnsureFolder(System.IO.Path.GetDirectoryName(path).Replace('\\', '/'));
             GdoOverlayAuthoringAsset created = ScriptableObject.CreateInstance<GdoOverlayAuthoringAsset>();
-            created.Initialise(target); AssetDatabase.CreateAsset(created, path); AssetDatabase.SaveAssets();
+            created.Initialise(target); AssetDatabase.CreateAsset(created, path); AssetDatabase.SaveAssetIfDirty(created);
             return created;
         }
 

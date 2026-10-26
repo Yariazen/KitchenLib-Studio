@@ -2,6 +2,7 @@
 
 ## [0.1.0-alpha.1]
 
+- Harden public-surface auditing across conditional configurations, case-sensitive qualified names and all non-template C# source locations. Scope build saves to product assets so unrelated dirty work remains unsaved, and preserve accepted scalar semantic kinds between pre-build processors.
 - Finalize the editor-only API with explicit `RegisterBuildProcessor` registration, captured namespaced IDs/orders, ordinal duplicate rejection and deterministic execution. Add immutable `IStudioBuildProcessor`, `StudioBuildContext`, `StudioBuildFieldChange` and `StudioBuildProcessorResult` contracts for build-only replacement of existing scalar companion fields. Contexts/results are bounded, processor failures are isolated, authored state is restored, and original/transformed manifest validation, package audit and final bundle verification remain mandatory. Exact supported shapes, limits and lifecycle behavior are documented in the authoring reference under the existing `0.x` compatibility policy.
 - Enforce an exact 22-type public API/signature allowlist in the package gate, retaining internal serialized roots and implementation types. Scope the root build-output ignore rule so `Editor/Api/Build` contracts and future additions remain tracked on every platform.
 - Support declarative custom graph nodes through the editor-only `KitchenLib.Studio.Editor.Api`: atomic registration, deferred palette refresh, Studio-owned controls, undoable persistence, missing-definition placeholders, isolated validation and bounded build projection.

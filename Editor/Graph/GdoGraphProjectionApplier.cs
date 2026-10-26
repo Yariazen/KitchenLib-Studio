@@ -65,11 +65,19 @@ namespace KitchenLib.Studio.Editor.Graph
             Undo.SetCurrentGroupName("Apply GDO bundle graph relationships");
             try
             {
-                foreach (IGrouping<string, GdoGraphProjectedField> ownerFields in projection.Fields.GroupBy(field => field.OwnerNodeId))
+                var groups = projection.Fields.GroupBy(field => field.OwnerNodeId).ToArray();
+                var companions = new Dictionary<string, GdoOverlayAuthoringAsset>(StringComparer.Ordinal);
+                // Creating a companion can reimport earlier assets. Finish creation before modifying
+                // any companion so scoped saves cannot lose earlier unsaved projected fields.
+                foreach (IGrouping<string, GdoGraphProjectedField> ownerFields in groups)
                 {
                     GdoGraphNodeRecord owner = graph.Nodes.Single(node => node.Id == ownerFields.Key);
-                    GdoOverlayAuthoringAsset companion = GdoOverlayAuthoringRepository.Find(owner.Asset) ??
-                        GdoOverlayAuthoringRepository.GetOrCreate(owner.Asset);
+                    companions.Add(ownerFields.Key, GdoOverlayAuthoringRepository.Find(owner.Asset) ??
+                        GdoOverlayAuthoringRepository.GetOrCreate(owner.Asset));
+                }
+                foreach (IGrouping<string, GdoGraphProjectedField> ownerFields in groups)
+                {
+                    GdoOverlayAuthoringAsset companion = companions[ownerFields.Key];
                     if (recordUndo) Undo.RegisterCompleteObjectUndo(companion, "Apply GDO graph relationships");
                     foreach (GdoGraphProjectedField field in ownerFields)
                         companion.UpsertField(field.DeclaringType, field.FieldName, field.Value);

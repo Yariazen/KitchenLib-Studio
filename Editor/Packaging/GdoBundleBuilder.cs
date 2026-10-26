@@ -150,11 +150,13 @@ namespace KitchenLib.Studio.Editor.Packaging
                     assetBundleName = request.BundleFileName,
                     assetNames = bundleAssetPaths.ToArray()
                 };
-                AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(
-                    request.OutputRoot,
-                    new[] { build },
-                    BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.DeterministicAssetBundle,
-                    BuildTarget.StandaloneWindows64);
+                AssetBundleManifest manifest;
+                using (StudioBuildSaveGuard.RestrictTo(bundleAssetPaths))
+                    manifest = BuildPipeline.BuildAssetBundles(
+                        request.OutputRoot,
+                        new[] { build },
+                        BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.DeterministicAssetBundle,
+                        BuildTarget.StandaloneWindows64);
                 if (manifest == null || !File.Exists(bundlePath))
                 {
                     issues.Add(new ValidationIssue(ValidationSeverity.Fatal, bundlePath, string.Empty, "Unity did not produce the requested AssetBundle."));

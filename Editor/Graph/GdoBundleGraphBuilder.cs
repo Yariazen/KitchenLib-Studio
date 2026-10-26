@@ -42,7 +42,15 @@ namespace KitchenLib.Studio.Editor.Graph
 
             string[] assetPaths = graph.Nodes.Where(node => node.Kind == GdoGraphNodeKind.Local && !node.IsBroken)
                 .Select(node => AssetDatabase.GetAssetPath(node.Asset)).OrderBy(path => path, StringComparer.Ordinal).ToArray();
-            AssetDatabase.SaveAssets();
+            // Save only the authored objects covered by this product's transaction. A build must not
+            // save or clear unrelated editor work, including when a processor later rejects the build.
+            foreach (GdoGraphNodeRecord node in graph.Nodes.Where(node => node.Kind == GdoGraphNodeKind.Local && !node.IsBroken))
+            {
+                AssetDatabase.SaveAssetIfDirty(node.Asset);
+                var companion = Overlays.GdoOverlayAuthoringRepository.Find(node.Asset);
+                if (companion != null) AssetDatabase.SaveAssetIfDirty(companion);
+            }
+            AssetDatabase.SaveAssetIfDirty(graph);
             return GdoBundleBuilder.Build(new BundleBuildRequest(assetPaths, outputRoot, graph.BundleFileName,
                 AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(graph))));
         }

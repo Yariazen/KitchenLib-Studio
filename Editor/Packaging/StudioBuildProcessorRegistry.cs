@@ -81,11 +81,32 @@ namespace KitchenLib.Studio.Editor.Packaging
         private static void Reset() { Entries.Clear(); registering = false; processing = false; buildDepth = 0; }
     }
 
+    // Unity's bundle builder also requests a global save. Restrict that request to the product's
+    // already journaled build inputs; explicit authoring saves use SaveAssetIfDirty instead.
+    internal sealed class StudioBuildSaveGuard : UnityEditor.AssetModificationProcessor
+    {
+        private static HashSet<string> allowedPaths;
+        private sealed class Scope : IDisposable
+        {
+            private readonly HashSet<string> previous;
+            internal Scope(IEnumerable<string> paths)
+            {
+                previous = allowedPaths;
+                allowedPaths = new HashSet<string>(paths, StringComparer.Ordinal);
+            }
+            public void Dispose() { allowedPaths = previous; }
+        }
+        internal static IDisposable RestrictTo(IEnumerable<string> paths) => new Scope(paths);
+        private static string[] OnWillSaveAssets(string[] paths) => allowedPaths == null ? paths :
+            paths.Where(path => allowedPaths.Contains(path)).ToArray();
+    }
+
     // No authored Unity object is handed to an extension. Only these disposable copies receive changes.
     internal sealed class StudioBuildPreparation : IDisposable
     {
         private readonly Dictionary<string, GameDataObject> assets;
         private GdoOverlayAuthoringAsset[] companions;
+        private Dictionary<string, StudioAuthoringValue> typedValues;
         internal IReadOnlyList<GdoOverlayAuthoringAsset> Companions => companions;
 
         internal StudioBuildPreparation(IEnumerable<GameDataObject> selected, IEnumerable<GdoOverlayAuthoringAsset> authored)
@@ -98,6 +119,7 @@ namespace KitchenLib.Studio.Editor.Packaging
         {
             if (assets.Count > 1024) throw new InvalidOperationException();
             var nodes = new List<StudioGraphNodeData>();
+            var snapshotValues = typedValues ?? new Dictionary<string, StudioAuthoringValue>(StringComparer.Ordinal);
             int budget = 1048576;
             int fields = 0;
             Text(productId, ref budget);
@@ -108,17 +130,24 @@ namespace KitchenLib.Studio.Editor.Packaging
                 GdoOverlayAuthoringAsset companion = companions.SingleOrDefault(item => item.Target == asset.Value);
                 if (companion != null)
                     foreach (GdoOverlayField field in companion.Fields)
-                        if (TryValue(field.Value, out StudioAuthoringValue value))
+                    {
+                        string identity = asset.Key + "\0" + Key(field);
+                        StudioAuthoringValue value;
+                        bool available = typedValues == null ? TryValue(field.Value, out value) : typedValues.TryGetValue(identity, out value);
+                        if (available)
                         {
+                            if (typedValues == null) snapshotValues.Add(identity, value);
                             string key = Key(field);
                             Text(key, ref budget);
                             Value(value, ref budget);
                             values.Add(new KeyValuePair<string, StudioAuthoringValue>(key, value));
                             if (values.Count > 256 || ++fields > 4096) throw new InvalidOperationException();
                         }
+                    }
                 nodes.Add(new StudioGraphNodeData(asset.Key, KitchenLibStudioApi.GdoReferenceSemanticTypeId,
                     values, Array.Empty<StudioGraphConnection>()));
             }
+            typedValues = snapshotValues;
             return new StudioBuildContext(productId, nodes);
         }
 
@@ -136,6 +165,7 @@ namespace KitchenLib.Studio.Editor.Packaging
                     string.Empty, "BuildFinding:" + id + ":" + finding.Code, finding.Message));
             }
             var seen = new HashSet<string>(StringComparer.Ordinal);
+            var pendingValues = new Dictionary<string, StudioAuthoringValue>(typedValues, StringComparer.Ordinal);
             var pending = Copy(companions);
             try
             {
@@ -146,9 +176,11 @@ namespace KitchenLib.Studio.Editor.Packaging
                         !seen.Add(change.NodeId + "\0" + change.FieldKey)) throw new InvalidOperationException();
                     GdoOverlayAuthoringAsset companion = pending.SingleOrDefault(item => item.Target == target);
                     GdoOverlayField field = companion?.Fields.SingleOrDefault(item => Key(item) == change.FieldKey);
-                    if (field == null || !TryValue(field.Value, out StudioAuthoringValue previous) || previous.Kind != change.Value.Kind)
+                    string identity = change.NodeId + "\0" + change.FieldKey;
+                    if (field == null || !typedValues.TryGetValue(identity, out StudioAuthoringValue previous) || previous.Kind != change.Value.Kind)
                         throw new InvalidOperationException();
                     companion.UpsertField(field.DeclaringType, field.FieldName, Replace(field.Value, change.Value));
+                    pendingValues[identity] = change.Value;
                 }
                 // Schema/required-field checks remain mandatory after all bounded replacements.
                 foreach (GdoOverlayAuthoringAsset companion in pending)
@@ -158,6 +190,9 @@ namespace KitchenLib.Studio.Editor.Packaging
                 if (findings.Any(finding => finding.Severity == ValidationSeverity.Error || finding.Severity == ValidationSeverity.Fatal)) return;
                 Destroy(companions);
                 companions = pending;
+                // Keep the accepted semantic value, rather than reparsing its serialized scalar text.
+                // In particular, Number(2.0) formats as "2" but must never become Integer(2).
+                typedValues = pendingValues;
                 pending = null;
             }
             finally { Destroy(pending); }

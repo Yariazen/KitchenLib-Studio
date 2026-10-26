@@ -176,18 +176,39 @@ function Get-SignatureTokens($Node, [int]$End = [int]::MaxValue) {
 }
 
 function Get-PublicTypes([string]$Source, [string]$Path) {
-    $tree = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source)
-    $syntax = $tree.GetRoot()
-    # Audit every conditional branch, including UNITY_EDITOR and future extension symbols.
-    # Remove only parser-recognized conditional directives, never matching text inside a string.
-    $directives = @($syntax.DescendantTrivia() | Where-Object {
-        $_.HasStructure -and $_.GetStructure().GetType().Name -in @(
-            'IfDirectiveTriviaSyntax', 'ElifDirectiveTriviaSyntax', 'ElseDirectiveTriviaSyntax', 'EndIfDirectiveTriviaSyntax')
-    } | Sort-Object { $_.FullSpan.Start } -Descending)
-    foreach ($directive in $directives) {
-        $Source = $Source.Remove($directive.FullSpan.Start, $directive.FullSpan.Length)
+    $syntax = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source).GetRoot()
+    $symbols = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    foreach ($trivia in $syntax.DescendantTrivia($null, $true)) {
+        if (-not $trivia.HasStructure) { continue }
+        $directive = $trivia.GetStructure()
+        if ($directive.GetType().Name -notin @('IfDirectiveTriviaSyntax', 'ElifDirectiveTriviaSyntax')) { continue }
+        foreach ($token in $directive.Condition.DescendantTokens()) {
+            if ($token.RawKind -eq [int][Microsoft.CodeAnalysis.CSharp.SyntaxKind]::IdentifierToken) {
+                [void]$symbols.Add($token.ValueText)
+            }
+        }
     }
-    if ($directives.Count -gt 0) { $syntax = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source).GetRoot() }
+    # Parse each actual configuration. Flattening branches can change type nesting and hide a leak.
+    # Fail closed rather than silently dropping configurations when the bounded audit is exceeded.
+    if ($symbols.Count -gt 8) { Add-Failure "C# conditional audit exceeds eight symbols: $Path"; return }
+    $names = @($symbols)
+    $seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    for ($mask = 0; $mask -lt [math]::Pow(2, $names.Count); $mask++) {
+        [string[]]$enabled = @(for ($index = 0; $index -lt $names.Count; $index++) {
+            if ($mask -band (1 -shl $index)) { $names[$index] }
+        })
+        $options = [Microsoft.CodeAnalysis.CSharp.CSharpParseOptions]::Default.WithPreprocessorSymbols($enabled)
+        $syntax = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($Source, $options).GetRoot()
+        if (@($syntax.GetDiagnostics() | Where-Object { $_.Severity.ToString() -eq 'Error' }).Count -gt 0) {
+            Add-Failure "Invalid C# syntax in a conditional configuration: $Path"; continue
+        }
+        foreach ($type in Get-PublicTypesForSyntax $syntax $Path) {
+            if ($seen.Add($type.Name + "`0" + $type.Hash + "`0" + $type.Position)) { $type }
+        }
+    }
+}
+
+function Get-PublicTypesForSyntax($syntax, [string]$Path) {
     foreach ($node in $syntax.DescendantNodes()) {
         if ($node -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.BaseTypeDeclarationSyntax] -and
             $node -isnot [Microsoft.CodeAnalysis.CSharp.Syntax.DelegateDeclarationSyntax]) { continue }
@@ -242,12 +263,13 @@ function Get-PublicTypes([string]$Source, [string]$Path) {
         $hasher = [System.Security.Cryptography.SHA256]::Create()
         try { $hash = [BitConverter]::ToString($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($signature))).Replace('-', '') }
         finally { $hasher.Dispose() }
-        [pscustomobject]@{ Name = $name; Hash = $hash; Path = $Path }
+        [pscustomobject]@{ Name = $name; Hash = $hash; Path = $Path; Position = $node.SpanStart }
     }
 }
 
 # Intentional supported contracts. The three serialized roots remain internal and need no public exemption.
-$supportedPublicTypes = @{
+$supportedPublicTypes = [System.Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
+foreach ($entry in @{
     'KitchenLib.Studio.Editor.Api.Authoring.StudioAuthoringValue' = '8599F7EBA3E095AD20B856607D81DC2455727F4C426432A89D4015302EDD32AE'
     'KitchenLib.Studio.Editor.Api.Authoring.StudioAuthoringValueKind' = '7D873C9859D2C74DE14055B89F83032CA4ABE99034BFE4A3D85C363B9C68014E'
     'KitchenLib.Studio.Editor.Api.Build.IStudioBuildProcessor' = '372F445B2001E2275F850A4B010E30F28FCFEE7E977B244D4F2200BB00DEB942'
@@ -270,12 +292,17 @@ $supportedPublicTypes = @{
     'KitchenLib.Studio.Editor.Api.Validation.StudioValidationContext' = '925F5D628AC71EFEE861989C427734289E3990AB0C4E9B24CB89030F19D9111E'
     'KitchenLib.Studio.Editor.Api.Validation.StudioValidationFinding' = '83CD430F75947C5B0380D959B87BBC7952B816FC9A1196A5745ED58220950988'
     'KitchenLib.Studio.Editor.Api.Validation.StudioValidationSeverity' = 'CD6339E3B9E8EF39F41D4280DC8E876FD96612E3C4E59B105382A71D20B74473'
-}
+}.GetEnumerator()) { $supportedPublicTypes.Add($entry.Key, $entry.Value) }
 try {
     $publicTypes = @(foreach ($file in $allFiles | Where-Object {
-        $_.Extension -eq '.cs' -and (Relative-Path $_.FullName).StartsWith('Editor/', [StringComparison]::Ordinal) -and
-        (Relative-Path $_.FullName) -notmatch '(^|/)[^/]+~/'
-    }) { Get-PublicTypes (Get-Content -LiteralPath $file.FullName -Raw) (Relative-Path $file.FullName) })
+        $_.Extension -ieq '.cs' -and -not (Relative-Path $_.FullName).StartsWith('Editor/Generation/Templates~/', [StringComparison]::Ordinal)
+    }) {
+        $path = Relative-Path $file.FullName
+        if (-not $path.StartsWith('Editor/', [StringComparison]::Ordinal)) {
+            Add-Failure "C# source is outside the authorized Editor tree: $path"
+        }
+        Get-PublicTypes (Get-Content -LiteralPath $file.FullName -Raw) $path
+    })
     foreach ($type in $publicTypes) {
         if (-not $supportedPublicTypes.ContainsKey($type.Name) -or -not $type.Path.StartsWith('Editor/Api/', [StringComparison]::Ordinal)) {
             Add-Failure "Unsupported public implementation type: $($type.Name) ($($type.Path))"
