@@ -103,7 +103,7 @@ namespace KitchenLib.Studio.Editor.Graph
         public override void BuildContextualMenu(ContextualMenuPopulateEvent evt)
         {
             base.BuildContextualMenu(evt);
-            evt.menu.AppendAction("Remove from graph", _ => _removeMember?.Invoke(),
+            evt.menu.AppendAction("Delete GDO…", _ => _removeMember?.Invoke(),
                 _removeMember == null ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
             if (IsBroken) return;
             evt.menu.AppendAction("Rename GDO", _ => _renameGdo?.Invoke(),
