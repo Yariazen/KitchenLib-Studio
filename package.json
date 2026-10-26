@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git"
+    "url": "https://github.com/Yariazen/KitchenLib-Studio.git"
   },
   "dependencies": {
     "com.unity.textmeshpro": "3.0.6",
