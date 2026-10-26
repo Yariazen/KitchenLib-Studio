@@ -47,10 +47,16 @@ namespace KitchenLib.Studio.Editor
     public static class BundleOutputVerifier
     {
         public static IReadOnlyList<ValidationIssue> Verify(string packageRoot, string bundlePath, ExpectedGdo expected)
+            => Verify(packageRoot, bundlePath, new[] { expected }, expected.RequiresLinkManifest);
+
+        public static IReadOnlyList<ValidationIssue> Verify(string packageRoot, string bundlePath,
+            IReadOnlyList<ExpectedGdo> expected, bool requiresLinkManifest)
         {
+            if (expected == null || expected.Count == 0) throw new ArgumentException("At least one expected GDO is required.", nameof(expected));
             var issues = new List<ValidationIssue>();
-            string[] sidecars = expected.RequiresLinkManifest ? new[] { GdoOverlayManifest.AssetName } : Array.Empty<string>();
-            GdoPackageAuditReport audit = GdoPackageAudit.Audit(packageRoot, new[] { bundlePath }, sidecars, new[] { expected.AssemblyName });
+            string[] sidecars = requiresLinkManifest ? new[] { GdoOverlayManifest.AssetName } : Array.Empty<string>();
+            GdoPackageAuditReport audit = GdoPackageAudit.Audit(packageRoot, new[] { bundlePath }, sidecars,
+                expected.Select(item => item.AssemblyName).Distinct(StringComparer.Ordinal));
             foreach (GdoPackageAuditFinding finding in audit.Findings)
                 issues.Add(new ValidationIssue(finding.Severity, finding.Path, finding.Category, finding.Message));
             if (audit.Findings.Any(finding => finding.Category == "MalformedBundle" || finding.Category == "MissingBundle"))
@@ -72,12 +78,11 @@ namespace KitchenLib.Studio.Editor
             try
             {
                 string[] serializedAssetNames = bundle.GetAllAssetNames();
-                int expectedSerializedAssetCount = expected.RequiresLinkManifest ? 2 : 1;
+                int expectedSerializedAssetCount = expected.Count + (requiresLinkManifest ? 1 : 0);
                 if (serializedAssetNames.Length != expectedSerializedAssetCount)
                 {
-                    string expectedDescription = expected.RequiresLinkManifest
-                        ? "exactly two serialized assets: one GDO and one required GDO link manifest"
-                        : "exactly one serialized GDO asset";
+                    string expectedDescription = expected.Count + " GDO asset(s)" +
+                        (requiresLinkManifest ? " and one required GDO overlay manifest" : string.Empty);
                     issues.Add(new ValidationIssue(
                         ValidationSeverity.Fatal,
                         bundlePath,
@@ -98,15 +103,16 @@ namespace KitchenLib.Studio.Editor
                 }
 
                 GameDataObject[] gdos = bundle.LoadAllAssets<GameDataObject>();
-                if (gdos.Length != 1)
+                if (gdos.Length != expected.Count)
                 {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, bundlePath, string.Empty, $"Expected exactly one GameDataObject, found {gdos.Length}."));
+                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, bundlePath, string.Empty,
+                        $"Expected exactly {expected.Count} GameDataObject asset(s), found {gdos.Length}."));
                     return issues;
                 }
                 TextAsset[] linkManifests = bundle.LoadAllAssets<TextAsset>()
                     .Where(asset => string.Equals(asset.name, Path.GetFileNameWithoutExtension(GdoOverlayManifest.AssetName), StringComparison.Ordinal))
                     .ToArray();
-                int expectedManifestCount = expected.RequiresLinkManifest ? 1 : 0;
+                int expectedManifestCount = requiresLinkManifest ? 1 : 0;
                 if (linkManifests.Length != expectedManifestCount)
                 {
                     issues.Add(new ValidationIssue(
@@ -116,30 +122,35 @@ namespace KitchenLib.Studio.Editor
                         $"Expected exactly {expectedManifestCount} GDO link manifest asset(s), found {linkManifests.Length}."));
                 }
 
-                GameDataObject actual = gdos[0];
+                foreach (ExpectedGdo item in expected)
+                {
+                GameDataObject actual = gdos.SingleOrDefault(value => value.ID == item.ID);
+                if (actual == null)
+                {
+                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, bundlePath, "ID",
+                        $"Expected GDO ID {item.ID} was not found in the final bundle."));
+                    continue;
+                }
                 string actualType = actual.GetType().FullName;
                 string actualAssembly = actual.GetType().Assembly.GetName().Name;
-                if (!string.Equals(actualType, expected.TypeFullName, StringComparison.Ordinal))
+                if (!string.Equals(actualType, item.TypeFullName, StringComparison.Ordinal))
                 {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, actual.name, string.Empty, $"Bundle GDO type is '{actualType}', expected '{expected.TypeFullName}'."));
+                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, actual.name, string.Empty, $"Bundle GDO type is '{actualType}', expected '{item.TypeFullName}'."));
                 }
-                if (!string.Equals(actualAssembly, expected.AssemblyName, StringComparison.Ordinal))
+                if (!string.Equals(actualAssembly, item.AssemblyName, StringComparison.Ordinal))
                 {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, actual.name, string.Empty, $"Bundle GDO assembly is '{actualAssembly}', expected '{expected.AssemblyName}'."));
+                    issues.Add(new ValidationIssue(ValidationSeverity.Fatal, actual.name, string.Empty, $"Bundle GDO assembly is '{actualAssembly}', expected '{item.AssemblyName}'."));
                 }
-                if (!string.Equals(actual.name, expected.AssetName, StringComparison.Ordinal))
+                if (!string.Equals(actual.name, item.AssetName, StringComparison.Ordinal))
                 {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "name", $"Bundle GDO asset name is '{actual.name}', expected '{expected.AssetName}'."));
-                }
-                if (actual.ID != expected.ID)
-                {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "ID", $"Bundle GDO ID is {actual.ID}, expected {expected.ID}."));
+                    issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "name", $"Bundle GDO asset name is '{actual.name}', expected '{item.AssetName}'."));
                 }
 
                 var difficulty = actual as GameDifficultySettings;
-                if (difficulty != null && difficulty.IsActive != expected.IsActive)
+                if (difficulty != null && difficulty.IsActive != item.IsActive)
                 {
                     issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "IsActive", "Bundle GDO active state does not match the expected fixture."));
+                }
                 }
             }
             finally

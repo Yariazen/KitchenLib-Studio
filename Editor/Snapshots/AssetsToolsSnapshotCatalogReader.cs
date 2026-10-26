@@ -17,7 +17,8 @@ namespace KitchenLib.Studio.Editor
         {
             PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(gameRoot);
             string dataRoot = layout.DataRoot;
-            string classData = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty", "AssetsTools.NET", "classdata.tpk");
+            string classData = KitchenLibStudioGeneratedPaths.PackageFilePath(
+                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
             var drafts = new List<RecordDraft>(); var edges = new List<EdgeDraft>(); var diagnostics = new List<VanillaAssetDiagnosticData>();
             var sources = new List<VanillaAssetSourceData>();
             var manager = new AssetsManager();

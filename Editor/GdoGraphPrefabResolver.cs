@@ -68,8 +68,8 @@ namespace KitchenLib.Studio.Editor
             if (source == null || PrefabUtility.GetPrefabAssetType(source) == PrefabAssetType.NotAPrefab)
                 issues.Add(Issue(record.Id, "Workspace prefab is missing or is not a prefab asset."));
             else if (normalized.IndexOf("/Editor/", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                normalized.StartsWith("Assets/KitchenLibStudio/Generated/", StringComparison.OrdinalIgnoreCase))
-                issues.Add(Issue(record.Id, "Workspace prefab cannot come from an Editor or KitchenLibStudio/Generated folder."));
+                normalized.StartsWith(KitchenLibStudioGeneratedPaths.AssetRoot + "/", StringComparison.OrdinalIgnoreCase))
+                issues.Add(Issue(record.Id, "Workspace prefab cannot come from an Editor or KitchenLibStudio generated folder."));
             return issues;
         }
 

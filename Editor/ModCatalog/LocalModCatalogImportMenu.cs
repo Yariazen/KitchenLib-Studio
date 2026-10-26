@@ -14,7 +14,7 @@ namespace KitchenLib.Studio.Editor
             if (string.IsNullOrEmpty(packagePath)) return;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+                string projectRoot = KitchenLibStudioGeneratedPaths.ProjectRoot;
                 LocalModCatalogImportResult result = LocalModCatalogPackage.Import(packagePath,
                     LocalModCatalogPackage.DefaultCacheRoot(projectRoot));
                 EditorUtility.DisplayDialog("Mod Catalogue Imported",

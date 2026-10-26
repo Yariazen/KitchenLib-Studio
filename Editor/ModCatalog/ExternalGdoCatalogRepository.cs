@@ -225,7 +225,7 @@ namespace KitchenLib.Studio.Editor
 
         private static ExternalGdoCatalogRepository CreateCurrent()
         {
-            string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            string projectRoot = KitchenLibStudioGeneratedPaths.ProjectRoot;
             var result = new ExternalGdoCatalogRepository(VanillaGdoCatalogRepository.Current,
                 LocalModCatalogPackage.DefaultCacheRoot(projectRoot));
             LocalModCatalogPackage.Imported += () => result.Reload();

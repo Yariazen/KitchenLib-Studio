@@ -64,12 +64,26 @@ namespace KitchenLib.Studio.Editor
             finally { _reconciling = false; }
         }
 
-        private static bool HasCurrentOutput()
+        public static bool TryValidateCurrentOutput(out string error)
         {
             KitchenLibStudioMirrorState state = KitchenLibStudioMirrorState.Read();
-            return state?.HasCompleteOutput() == true && state.generatorVersion == PlateUpMirrorGenerator.Version
-                && state.IsCurrent(PlateUpInstallationSettings.ResolveInstallation(false));
+            if (state?.HasCompleteOutput() != true)
+            { error = "Generate KitchenLib Studio mirrors before building or importing content."; return false; }
+            PlateUpInstallation installation = PlateUpInstallationSettings.ResolveInstallation(false);
+            if (installation == null || !state.IsCurrent(installation))
+            { error = "The generated mirrors do not match the selected PlateUp installation. Regenerate them before building or importing content."; return false; }
+            error = null;
+            return true;
         }
+
+        public static void RequireCurrentOutput(PlateUpInstallation installation)
+        {
+            KitchenLibStudioMirrorState state = KitchenLibStudioMirrorState.Read();
+            if (state?.IsCurrent(installation) != true)
+                throw new InvalidDataException("The generated mirrors do not match this PlateUp installation. Regenerate them before importing content.");
+        }
+
+        private static bool HasCurrentOutput() => TryValidateCurrentOutput(out _);
 
         // Call after all generated files and their complete state record have been published.
         public static void CompletePublication()

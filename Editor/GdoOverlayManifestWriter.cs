@@ -179,31 +179,5 @@ namespace KitchenLib.Studio.Editor
                 throw new InvalidOperationException("Scalar node kind mismatch at " + path + ".");
         }
 
-        private static MirrorSchema ReadSchema(string path)
-        {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path)) throw new InvalidOperationException("Mirror metadata does not exist.");
-            MirrorSchema schema;
-            try { schema = JsonUtility.FromJson<MirrorSchema>(File.ReadAllText(path, Encoding.UTF8)); }
-            catch (Exception exception) { throw new InvalidOperationException("Mirror metadata is malformed.", exception); }
-            if (schema == null || schema.schemaVersion != 2 || string.IsNullOrEmpty(schema.mirrorFingerprint) || schema.mirrorFingerprint.Length != 64)
-                throw new InvalidOperationException("Mirror metadata is incompatible with overlay schema 2.");
-            return schema;
-        }
-
-        [Serializable] private sealed class MirrorSchema
-        {
-            public int schemaVersion; public string mirrorFingerprint; public List<MirrorType> supportedTypes = new List<MirrorType>();
-            public MirrorField Find(string declaringType, string field) => supportedTypes.SelectMany(type => type.fields ?? new List<MirrorField>()).SingleOrDefault(value => value.declaringType == declaringType && value.name == field);
-            public IEnumerable<string> RequiredReconstructed(Type targetType)
-            {
-                var names = new HashSet<string>(StringComparer.Ordinal);
-                while (targetType != null) { names.Add(RuntimeName(targetType)); targetType = targetType.BaseType; }
-                return supportedTypes.SelectMany(type => type.fields ?? new List<MirrorField>())
-                    .Where(field => field.classification == "Reconstructed" && names.Contains(field.declaringType))
-                    .Select(field => field.declaringType + "|" + field.name);
-            }
-        }
-        [Serializable] private sealed class MirrorType { public List<MirrorField> fields = new List<MirrorField>(); }
-        [Serializable] private sealed class MirrorField { public string declaringType; public string name; public string classification; public string type; public string shape; }
     }
 }

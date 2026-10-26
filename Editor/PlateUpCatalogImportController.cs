@@ -25,11 +25,10 @@ namespace KitchenLib.Studio.Editor
         public static async void Import(PlateUpInstallation installation)
         {
             if (installation == null) return;
-            string generated = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated");
-            string schema = Path.Combine(generated, "plateup-schema.json");
-            string destination = Path.Combine(generated, "vanilla-gdo-catalog.json");
-            string snapshotDestination = Path.Combine(generated, "vanilla-snapshot-catalog.json");
-            string snapshotIndexDestination = Path.Combine(generated, "vanilla-snapshot-index.json");
+            string schema = KitchenLibStudioGeneratedPaths.SchemaPath;
+            string destination = KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath;
+            string snapshotDestination = KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath;
+            string snapshotIndexDestination = KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath;
             CancellationTokenSource cancellation;
             int generation;
             Task<PlateUpCatalogImportResult> operation;
@@ -88,6 +87,7 @@ namespace KitchenLib.Studio.Editor
             byte[][] snapshotPayload;
             try
             {
+                KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
                 snapshotPayload = await Task.Run(() =>
                 {
                     SnapshotCatalogScanResult scan = new AssetsToolsSnapshotCatalogReader().Scan(installation.GameRoot, null, token);
@@ -154,19 +154,19 @@ namespace KitchenLib.Studio.Editor
 
         public static void ImportGdoBatch(PlateUpInstallation installation, CancellationToken token)
         {
-            string generated = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated");
-            var pipeline = new DefaultPlateUpCatalogImportPipeline(Path.Combine(generated, "plateup-schema.json"));
+            KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
+            var pipeline = new DefaultPlateUpCatalogImportPipeline(KitchenLibStudioGeneratedPaths.SchemaPath);
             VanillaGdoScanResult scan = pipeline.Scan(installation, null, token); byte[] content = pipeline.Build(installation, scan, token);
-            pipeline.Publish(Path.Combine(generated, "vanilla-gdo-catalog.json"), content, token);
+            pipeline.Publish(KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath, content, token);
         }
 
         public static void ImportSnapshotBatch(PlateUpInstallation installation, CancellationToken token)
         {
-            string generated = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated");
+            KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
             SnapshotCatalogScanResult scan = new AssetsToolsSnapshotCatalogReader().Scan(installation.GameRoot, null, token);
-            VanillaAssetCatalogFile.PublishAtomic(Path.Combine(generated, "vanilla-snapshot-catalog.json"),
+            VanillaAssetCatalogFile.PublishAtomic(KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath,
                 VanillaAssetCatalogFile.Serialize(scan.Data));
-            ExternalGdoSnapshotIndexFile.Publish(Path.Combine(generated, "vanilla-snapshot-index.json"), scan.Data);
+            ExternalGdoSnapshotIndexFile.Publish(KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath, scan.Data);
         }
     }
 }

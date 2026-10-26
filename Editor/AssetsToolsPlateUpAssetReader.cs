@@ -14,7 +14,7 @@ namespace KitchenLib.Studio.Editor
         private readonly IPlateUpAssetReaderBackend _backend;
 
         public AssetsToolsPlateUpAssetReader() : this(new AssetsToolsPlateUpAssetReaderBackend(
-            Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty", "AssetsTools.NET", "classdata.tpk"))) { }
+            KitchenLibStudioGeneratedPaths.PackageFilePath("Editor/ThirdParty/AssetsTools.NET/classdata.tpk"))) { }
 
         public AssetsToolsPlateUpAssetReader(IPlateUpAssetReaderBackend backend)
         {
@@ -45,7 +45,8 @@ namespace KitchenLib.Studio.Editor
                 }
 
                 GdoTypeDescriptorView descriptor = GdoDescriptorCatalog.ForRuntimeType(item.RuntimeType);
-                bool knownGdo = string.Equals(item.AssemblyName, "Kitchen.GameData", StringComparison.Ordinal) && descriptor != null;
+                bool knownGdo = string.Equals(item.AssemblyName, "Kitchen.GameData", StringComparison.Ordinal) &&
+                    descriptor != null && GdoDescriptorCatalog.IsAssignable(item.RuntimeType, "KitchenData.GameDataObject");
                 if (!knownGdo) continue;
 
                 if (!string.IsNullOrEmpty(item.ReadError) || string.IsNullOrEmpty(item.Name) || item.Id == 0)

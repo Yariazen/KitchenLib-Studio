@@ -15,8 +15,8 @@ namespace KitchenLib.Studio.Editor
             if (graph == null) throw new ArgumentNullException(nameof(graph));
             if (string.IsNullOrEmpty(outputRoot))
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                outputRoot = Path.Combine(projectRoot, "Build", SafeName(graph.BundleName), "content");
+                outputRoot = Path.Combine(KitchenLibStudioGeneratedPaths.ProjectRoot,
+                    "Build", SafeName(graph.BundleName), "content");
             }
 
             GdoGraphDiagnostic[] preflight = GdoBundleGraphValidator.Validate(graph)

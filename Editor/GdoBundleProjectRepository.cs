@@ -300,7 +300,7 @@ namespace KitchenLib.Studio.Editor
         private static void RequireAvailablePath(string destination, string source)
         {
             string parent = Path.GetDirectoryName(destination).Replace('\\', '/');
-            string absoluteParent = Path.Combine(Path.GetDirectoryName(Application.dataPath), parent);
+            string absoluteParent = Path.Combine(KitchenLibStudioGeneratedPaths.ProjectRoot, parent);
             string name = Path.GetFileName(destination);
             string sourceName = Path.GetFileName(source);
             if (Directory.EnumerateFileSystemEntries(absoluteParent).Any(path =>
@@ -343,7 +343,7 @@ namespace KitchenLib.Studio.Editor
                 throw new ArgumentException("Parent must be an existing folder under Assets.", nameof(parentFolder));
 
             string project = parent + "/" + projectName;
-            string absoluteParent = Path.Combine(Path.GetDirectoryName(Application.dataPath), parent);
+            string absoluteParent = Path.Combine(KitchenLibStudioGeneratedPaths.ProjectRoot, parent);
             if (Directory.EnumerateFileSystemEntries(absoluteParent).Any(path =>
                 string.Equals(Path.GetFileName(path), projectName, StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException("A project path with this name already exists.", nameof(projectName));

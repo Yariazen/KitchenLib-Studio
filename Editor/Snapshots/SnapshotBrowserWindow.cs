@@ -41,7 +41,7 @@ namespace KitchenLib.Studio.Editor
 
         private void TryLoadVanilla(VisualElement content)
         {
-            string path = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated", "vanilla-snapshot-catalog.json");
+            string path = KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath;
             if (!File.Exists(path)) return;
             try
             {

@@ -58,7 +58,7 @@ namespace KitchenLib.Studio.Editor
             name = "gdo-bundle-graph-view";
             style.flexGrow = 1;
             StyleSheet controls = AssetDatabase.LoadAssetAtPath<StyleSheet>(
-                "Assets/KitchenLibStudio/Editor/GdoGraphControls.uss");
+                KitchenLibStudioGeneratedPaths.PackageAssetPath("Editor/GdoGraphControls.uss"));
             if (controls != null) styleSheets.Add(controls);
             SetupZoom(ContentZoomer.DefaultMinScale, ContentZoomer.DefaultMaxScale);
             this.AddManipulator(new ContentDragger());
@@ -309,10 +309,8 @@ namespace KitchenLib.Studio.Editor
 
         private static IExternalGdoSnapshotService CreateDefaultSnapshotService()
         {
-            string path = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated",
-                "vanilla-snapshot-catalog.json");
-            string indexPath = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated",
-                "vanilla-snapshot-index.json");
+            string path = KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath;
+            string indexPath = KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath;
             if (!File.Exists(path)) return Wrap(new UnavailableSnapshotService(
                 "Refresh the snapshot catalogue to generate external previews."));
             if (File.Exists(indexPath))

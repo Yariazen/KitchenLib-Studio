@@ -112,7 +112,7 @@ namespace KitchenLib.Studio.Editor
         }
         private static VanillaGdoCatalogRepository CreateCurrent()
         {
-            var repository = new VanillaGdoCatalogRepository(Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated", "vanilla-gdo-catalog.json"));
+            var repository = new VanillaGdoCatalogRepository(KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath);
             PlateUpCatalogImportController.CatalogChanged += () => repository.Reload();
             repository.Reload();
             PlateUpCatalogImportMenu.AssessSavedInstallation(repository);
@@ -137,7 +137,8 @@ namespace KitchenLib.Studio.Editor
 
     internal sealed class VanillaGdoCatalogAssetPostprocessor : AssetPostprocessor
     {
-        private const string CatalogAssetPath = "Assets/KitchenLibStudio/Generated/vanilla-gdo-catalog.json";
+        private static readonly string CatalogAssetPath = KitchenLibStudioGeneratedPaths.GeneratedAssetPath(
+            KitchenLibStudioGeneratedPaths.VanillaGdoCatalogFileName);
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets,
             string[] movedAssets, string[] movedFromAssetPaths)

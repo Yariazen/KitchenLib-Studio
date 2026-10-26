@@ -27,7 +27,7 @@ namespace KitchenLib.Studio.Editor
                     });
                     continue;
                 }
-                string absolute = Path.Combine(Path.GetDirectoryName(Application.dataPath), path);
+                string absolute = Path.Combine(KitchenLibStudioGeneratedPaths.ProjectRoot, path);
                 byte[] bytes = File.ReadAllBytes(absolute);
                 string json = EditorJsonUtility.ToJson(companion);
                 bool dirty = EditorUtility.IsDirty(companion);

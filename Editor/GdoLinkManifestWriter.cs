@@ -34,7 +34,7 @@ namespace KitchenLib.Studio.Editor
             var manifest = new GdoLinkManifest
             {
                 schemaVersion = 1,
-                mirrorFingerprint = mirror.sourceSha256
+                mirrorFingerprint = mirror.globalFingerprint
             };
 
             foreach (GdoLinkAuthoringAsset companion in authored.OrderBy(item => item.Target.ID))
@@ -87,13 +87,13 @@ namespace KitchenLib.Studio.Editor
                 throw new InvalidOperationException("Mirror metadata is malformed.", exception);
             }
 
-            MirrorType dish = manifest?.supportedTypes?.SingleOrDefault(type => type.fullName == "KitchenData.Dish");
-            MirrorLinkField link = dish?.linkFields?.SingleOrDefault() ?? dish?.fields?.SingleOrDefault(field => field.name == "MinimumIngredients");
-            bool versionOne = manifest != null && manifest.schemaVersion == 1 && link?.linkKind == "GdoHashSet" && link.elementType == "KitchenData.Item";
-            bool versionTwo = manifest != null && manifest.schemaVersion == 2 && link?.shape == "Set";
-            if (manifest == null || (!versionOne && !versionTwo) ||
-                string.IsNullOrEmpty(manifest.sourceSha256) || manifest.sourceSha256.Length != 64 ||
-                link == null || link.name != "MinimumIngredients")
+            MirrorType dish = manifest?.types?.SingleOrDefault(type => type.runtimeTypeName == "KitchenData.Dish");
+            MirrorLinkField link = dish?.fields?.SingleOrDefault(field => field.name == "MinimumIngredients");
+            bool versionFour = manifest != null && manifest.schemaVersion == 4 && link?.value?.kind == "Set" &&
+                link.value.element?.kind == "GdoReference" && link.value.element.expectedTypeName == "KitchenData.Item";
+            if (manifest == null || !versionFour ||
+                string.IsNullOrEmpty(manifest.globalFingerprint) || manifest.globalFingerprint.Length != 64 ||
+                link == null)
             {
                 throw new InvalidOperationException("Mirror metadata is incompatible with GDO link schema 1.");
             }
@@ -136,15 +136,14 @@ namespace KitchenLib.Studio.Editor
         private sealed class MirrorManifest
         {
             public int schemaVersion;
-            public string sourceSha256;
-            public List<MirrorType> supportedTypes;
+            public string globalFingerprint;
+            public List<MirrorType> types;
         }
 
         [Serializable]
         private sealed class MirrorType
         {
-            public string fullName;
-            public List<MirrorLinkField> linkFields;
+            public string runtimeTypeName;
             public List<MirrorLinkField> fields;
         }
 
@@ -152,9 +151,15 @@ namespace KitchenLib.Studio.Editor
         private sealed class MirrorLinkField
         {
             public string name;
-            public string linkKind;
-            public string elementType;
-            public string shape;
+            public MirrorValue value;
+        }
+
+        [Serializable]
+        private sealed class MirrorValue
+        {
+            public string kind;
+            public string expectedTypeName;
+            public MirrorValue element;
         }
     }
 }

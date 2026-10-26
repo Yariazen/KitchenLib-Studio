@@ -15,8 +15,8 @@ namespace KitchenLib.Studio.Editor
         private const int MaximumProperties = 4096;
         private readonly string _classDataPath;
 
-        public AssetsToolsPlateUpPreviewDecoder() : this(Path.Combine(Application.dataPath,
-            "KitchenLibStudio", "Editor", "ThirdParty", "AssetsTools.NET", "classdata.tpk")) { }
+        public AssetsToolsPlateUpPreviewDecoder() : this(KitchenLibStudioGeneratedPaths.PackageFilePath(
+            "Editor/ThirdParty/AssetsTools.NET/classdata.tpk")) { }
 
         public AssetsToolsPlateUpPreviewDecoder(string classDataPath)
         {

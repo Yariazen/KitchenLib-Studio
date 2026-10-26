@@ -291,7 +291,7 @@ namespace KitchenLib.Studio.Editor
         {
             string absolute = EditorUtility.OpenFilePanel("Open Bundle Project", Application.dataPath, "asset");
             if (string.IsNullOrEmpty(absolute)) return;
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string projectRoot = KitchenLibStudioGeneratedPaths.ProjectRoot;
             string full = Path.GetFullPath(absolute);
             if (!full.StartsWith(projectRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
             {

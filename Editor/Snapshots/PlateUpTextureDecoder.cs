@@ -11,8 +11,8 @@ namespace KitchenLib.Studio.Editor
         public static PreviewTextureData DecodeInstalled(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken)
         {
-            string classDataPath = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty",
-                "AssetsTools.NET", "classdata.tpk");
+            string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
+                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
             return DecodeInstalled(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath);
         }
 

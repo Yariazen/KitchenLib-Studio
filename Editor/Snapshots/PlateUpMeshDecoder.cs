@@ -17,8 +17,8 @@ namespace KitchenLib.Studio.Editor
         public static PreviewMeshData DecodeInstalled(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken)
         {
-            string classDataPath = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty",
-                "AssetsTools.NET", "classdata.tpk");
+            string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
+                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
             return DecodeInstalled(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath);
         }
 
@@ -295,8 +295,8 @@ namespace KitchenLib.Studio.Editor
         internal static T WithField<T>(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken, Func<AssetTypeValueField, T> decode)
         {
-            string classDataPath = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty",
-                "AssetsTools.NET", "classdata.tpk");
+            string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
+                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
             return WithField(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath, decode);
         }
 

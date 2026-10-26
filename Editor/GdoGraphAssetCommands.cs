@@ -27,7 +27,7 @@ namespace KitchenLib.Studio.Editor
                 throw new ArgumentException("Calculated GDO ID collides with a local or known external GDO.", nameof(gdoName));
             string folder = GdoBundleProjectRepository.GdoFolder(graph);
             string fileName = gdoName + ".asset";
-            string absoluteFolder = Path.Combine(Path.GetDirectoryName(Application.dataPath), folder);
+            string absoluteFolder = Path.Combine(KitchenLibStudioGeneratedPaths.ProjectRoot, folder);
             if (Directory.EnumerateFileSystemEntries(absoluteFolder).Any(path =>
                 string.Equals(Path.GetFileName(path), fileName, StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException("An asset already exists with this GDO name.", nameof(gdoName));

@@ -50,6 +50,9 @@ namespace KitchenLib.Studio.Editor
             }
 
             var issues = new List<ValidationIssue>();
+            if (!KitchenLibStudioBootstrap.TryValidateCurrentOutput(out string mirrorError))
+                issues.Add(new ValidationIssue(ValidationSeverity.Error, KitchenLibStudioGeneratedPaths.AssetRoot,
+                    "GeneratedMirrors", mirrorError));
             ValidateBundleFileName(request.BundleFileName, issues);
             var assets = new List<GameDataObject>();
             if (request.AssetPaths == null || request.AssetPaths.Count == 0)
@@ -80,6 +83,9 @@ namespace KitchenLib.Studio.Editor
             {
                 return new BundleBuildResult(bundlePath, issues);
             }
+            ExpectedGdo[] expected = assets.Select(asset => new ExpectedGdo(asset.GetType().FullName,
+                asset.GetType().Assembly.GetName().Name, asset.name, asset.ID,
+                asset is GameDifficultySettings difficulty && difficulty.IsActive, companions.Count > 0)).ToArray();
 
             try
             {
@@ -87,7 +93,7 @@ namespace KitchenLib.Studio.Editor
                 var bundleAssetPaths = request.AssetPaths.ToList();
                 if (companions.Count > 0)
                 {
-                    string mirrorPath = Path.Combine(Application.dataPath, "KitchenLibStudio", "Generated", "plateup-schema.json");
+                    string mirrorPath = KitchenLibStudioGeneratedPaths.SchemaPath;
                     string json;
                     try
                     {
@@ -127,6 +133,10 @@ namespace KitchenLib.Studio.Editor
                     GdoPackageAudit.Write(packageRoot, audit);
                     foreach (GdoPackageAuditFinding finding in audit.Findings.Where(finding => finding.Severity == ValidationSeverity.Fatal))
                         issues.Add(new ValidationIssue(ValidationSeverity.Fatal, finding.Path, finding.Category, finding.Message));
+                    issues.AddRange(BundleOutputVerifier.Verify(packageRoot, bundlePath, expected, companions.Count > 0)
+                        .Where(issue => !issues.Any(existing => existing.Severity == issue.Severity &&
+                            existing.AssetPath == issue.AssetPath && existing.PropertyPath == issue.PropertyPath &&
+                            existing.Message == issue.Message)));
                     return new BundleBuildResult(bundlePath, issues, audit);
                 }
             }
@@ -145,7 +155,7 @@ namespace KitchenLib.Studio.Editor
                 AssetDatabase.CreateFolder("Assets", "__KitchenLibStudioBuild");
             }
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string projectRoot = KitchenLibStudioGeneratedPaths.ProjectRoot;
             string manifestPath = Path.Combine(projectRoot, LinkManifestAssetPath.Replace('/', Path.DirectorySeparatorChar));
             File.WriteAllText(manifestPath, json, new System.Text.UTF8Encoding(false));
             File.WriteAllText(

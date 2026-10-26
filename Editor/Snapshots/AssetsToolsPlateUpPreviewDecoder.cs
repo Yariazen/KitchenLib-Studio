@@ -25,7 +25,8 @@ namespace KitchenLib.Studio.Editor
         {
             string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             string assetPath = Path.Combine(dataRoot, root.RelativePath);
-            string classData = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty", "AssetsTools.NET", "classdata.tpk");
+            string classData = KitchenLibStudioGeneratedPaths.PackageFilePath(
+                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
             var manager = new AssetsManager();
             var meshes = new List<PreviewMeshData>();
             var meshIndexes = new Dictionary<long, int>();
