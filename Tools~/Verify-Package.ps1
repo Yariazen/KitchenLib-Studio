@@ -149,6 +149,19 @@ foreach ($entry in $expectedHashes.GetEnumerator()) {
     }
 }
 
+# The upstream license texts are audited separately from the five binary/data payloads.
+$expectedLicenseHashes = [ordered]@{
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE-AssetsTools.NET.txt' = 'AB26018F961D37D489BCD0F8277B602D1A41586CDA867E59173778C7214AE29F'
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE-Mono.Cecil.txt' = '62DAD7936FC1214D0187B1DD27BD68EC055AF168B7FD1989CC8E36E0E2B9A990'
+}
+foreach ($entry in $expectedLicenseHashes.GetEnumerator()) {
+    $path = Join-Path $packageRoot $entry.Key
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne $entry.Value) {
+        Add-Failure "upstream license text hash changed: $([System.IO.Path]::GetFileName($entry.Key))"
+    }
+}
+
 try {
     $editorAssembly = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/KitchenLib.Studio.Editor.asmdef') -Raw | ConvertFrom-Json
     $bootstrapAssembly = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/KitchenLib.Studio.Bootstrap.asmdef') -Raw | ConvertFrom-Json
@@ -319,25 +332,46 @@ try {
 catch { Add-Failure "Public API audit failed (PowerShell 7 with its bundled C# parser is required): $($_.Exception.Message)" }
 
 $licenseText = if (Test-Path -LiteralPath (Join-Path $packageRoot 'LICENSE.md')) { Get-Content -LiteralPath (Join-Path $packageRoot 'LICENSE.md') -Raw } else { '' }
-$normalizedLicense = [regex]::Replace($licenseText, '\s+', ' ').Trim()
-$mitGrant = 'Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:'
-$mitCondition = 'The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.'
-$mitWarranty = 'THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.'
-if ($normalizedLicense -cnotmatch [regex]::Escape('MIT License') -or
-    $normalizedLicense -cnotmatch [regex]::Escape('Copyright (c) 2026 Yariazen') -or
-    -not $normalizedLicense.Contains($mitGrant) -or
-    -not $normalizedLicense.Contains($mitCondition) -or
-    -not $normalizedLicense.Contains($mitWarranty)) {
-    Add-Failure 'LICENSE.md must contain the canonical 2026 Yariazen MIT permission, condition, and warranty text.'
-}
-if ($normalizedLicense -notmatch '(?i)only to original KitchenLib Studio code and documentation' -or
-    $normalizedLicense -notmatch '(?i)Third Party Notices\.md') {
-    Add-Failure 'LICENSE.md must scope MIT to original KitchenLib Studio code and documentation and refer to Third Party Notices.md.'
+$approvedLicense = @'
+# KitchenLib Studio license
+
+This MIT license applies only to original KitchenLib Studio code and documentation. Third-party binaries, data, and other materials retain their own licensing status; see `Third Party Notices.md` and the upstream license texts included with those components.
+
+MIT License
+
+Copyright (c) 2026 Yariazen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'@
+if ([regex]::Replace($licenseText, '\s+', ' ').Trim() -cne [regex]::Replace($approvedLicense, '\s+', ' ').Trim()) {
+    Add-Failure 'LICENSE.md must exactly match the approved first-party MIT license document.'
 }
 
 $notices = if (Test-Path -LiteralPath (Join-Path $packageRoot 'Third Party Notices.md')) { Get-Content -LiteralPath (Join-Path $packageRoot 'Third Party Notices.md') -Raw } else { '' }
 if ($notices -notmatch '(?i)not relicensed under the KitchenLib Studio MIT license') {
     Add-Failure 'Third Party Notices.md must say bundled third-party material is not relicensed under the KitchenLib Studio MIT license.'
+}
+if (-not $notices.Contains('No license is claimed or granted here for `classdata.tpk` or AssetRipper/TypeTreeDumps.')) {
+    Add-Failure 'classdata.tpk and TypeTreeDumps non-grant is incomplete.'
+}
+if (-not $notices.Contains('KitchenLib Studio acknowledges the AssetRipper/Tpk and AssetRipper/TypeTreeDumps contributors whose community-maintained tooling and Unity type-layout data enable local interoperability with installed PlateUp assets. These projects are independent of KitchenLib Studio and are not affiliated with or endorsed by Unity Technologies.')) {
+    Add-Failure 'third-party contributor acknowledgement is incomplete.'
 }
 foreach ($entry in $expectedHashes.GetEnumerator()) {
     $payload = [System.IO.Path]::GetFileName($entry.Key)
@@ -348,6 +382,13 @@ foreach ($entry in $expectedHashes.GetEnumerator()) {
 $payloadRows = @($notices -split "`r?`n" | Where-Object { $_ -match '^\| (?:[^|]+\.(?:dll|tpk)) \|' })
 if ($payloadRows.Count -ne $expectedHashes.Count) {
     Add-Failure 'Third Party Notices.md must inventory exactly five audited payloads.'
+}
+$classdataRows = @($payloadRows | Where-Object { $_ -cmatch '^\| classdata\.tpk \|' })
+$classdataProvenance = 'AssetRipper/Tpk commit `94549d10ee0fbb90392e45e555861031ff560359`; `type_tree_tpk` workflow run `39096267408`; `lz4_file` artifact `12124827219`; AssetRipper/TypeTreeDumps input commit `20ba06e00e0625de0e49a502c6868d6cc86d0f0b`'
+if ($classdataRows.Count -ne 1 -or
+    -not $classdataRows[0].Contains($classdataProvenance) -or
+    -not $classdataRows[0].Contains('TypeTreeDumps has no declared repository license.')) {
+    Add-Failure 'classdata.tpk inventory provenance is incomplete.'
 }
 foreach ($component in @('AssetsTools.NET 3.0.5', 'AssetsTools.NET.MonoCecil 3.0.4', 'Mono.Cecil 0.11.6')) {
     if ($notices -notmatch [regex]::Escape($component)) { Add-Failure "Third-party notice is incomplete: $component" }
