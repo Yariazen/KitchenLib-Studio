@@ -30,7 +30,6 @@ namespace KitchenLib.Studio.Editor
         private static readonly PlateUpCatalogInstallationSettings Settings = new PlateUpCatalogInstallationSettings(Preferences, Discovery.ValidateSavedRoot);
         private static readonly PlateUpInstallationResolver Resolver = new PlateUpInstallationResolver(
             Preferences, Discovery.ValidateSavedRoot, Discovery.Discover,
-            PlateUpInstallationResolver.StandardWindowsRoot,
             () => EditorUtility.OpenFolderPanel("Select PlateUp installation", Settings.SavedRoot ?? string.Empty, string.Empty));
 
         public static void Import()

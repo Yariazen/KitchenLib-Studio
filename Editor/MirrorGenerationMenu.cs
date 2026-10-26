@@ -58,7 +58,7 @@ namespace KitchenLib.Studio.Editor
                 throw new ArgumentException("PlateUp root is required.", nameof(plateUpRoot));
             }
 
-            string path = Path.GetFullPath(Path.Combine(plateUpRoot, "PlateUp_Data", "Managed", "Kitchen.GameData.dll"));
+            string path = Path.GetFullPath(Path.Combine(PlateUpPlatformLayout.ResolveLayout(plateUpRoot).ManagedDirectory, "Kitchen.GameData.dll"));
             if (!File.Exists(path))
             {
                 throw new FileNotFoundException("Kitchen.GameData.dll was not found beneath the selected PlateUp installation.", path);

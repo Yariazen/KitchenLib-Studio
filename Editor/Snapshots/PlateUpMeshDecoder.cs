@@ -25,7 +25,7 @@ namespace KitchenLib.Studio.Editor
         public static PreviewMeshData DecodeInstalled(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken, string classDataPath)
         {
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             return WithField(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath,
                 fields => Decode(fields, dataRoot, cancellationToken));
         }
@@ -304,7 +304,7 @@ namespace KitchenLib.Studio.Editor
             CancellationToken cancellationToken, string classDataPath, Func<AssetTypeValueField, T> decode)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             string assetPath = Path.Combine(dataRoot, relativeAssetPath);
             var manager = new AssetsManager();
             try

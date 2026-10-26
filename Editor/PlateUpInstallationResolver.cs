@@ -17,12 +17,15 @@ namespace KitchenLib.Studio.Editor
 
     public sealed class PlateUpInstallationResolver
     {
-        public const string StandardWindowsRoot = @"S:\SteamLibrary\steamapps\common\PlateUp";
         private readonly IPlateUpCatalogPreferenceStore _store;
         private readonly Func<string, PlateUpInstallationValidation> _validate;
         private readonly Func<PlateUpDiscoveryResult> _discover;
         private readonly string _standardRoot;
         private readonly Func<string> _picker;
+
+        public PlateUpInstallationResolver(IPlateUpCatalogPreferenceStore store,
+            Func<string, PlateUpInstallationValidation> validate, Func<PlateUpDiscoveryResult> discover, Func<string> picker)
+            : this(store, validate, discover, null, picker) { }
 
         public PlateUpInstallationResolver(IPlateUpCatalogPreferenceStore store,
             Func<string, PlateUpInstallationValidation> validate, Func<PlateUpDiscoveryResult> discover,

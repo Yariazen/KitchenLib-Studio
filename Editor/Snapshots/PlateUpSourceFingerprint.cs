@@ -10,7 +10,7 @@ namespace KitchenLib.Studio.Editor
         public static void Validate(string gameRoot, VanillaAssetCatalogData catalog)
         {
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             foreach (VanillaAssetSourceData source in catalog.sources ?? Array.Empty<VanillaAssetSourceData>())
             {
                 string path = Path.Combine(dataRoot, source.relativePath ?? string.Empty);

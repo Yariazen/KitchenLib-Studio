@@ -15,12 +15,13 @@ namespace KitchenLib.Studio.Editor
         private static readonly string[] Containers = { "globalgamemanagers.assets", "resources.assets", "sharedassets0.assets", "sharedassets1.assets", "level0", "level1" };
         public SnapshotCatalogScanResult Scan(string gameRoot, IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)
         {
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(gameRoot);
+            string dataRoot = layout.DataRoot;
             string classData = Path.Combine(Application.dataPath, "KitchenLibStudio", "Editor", "ThirdParty", "AssetsTools.NET", "classdata.tpk");
             var drafts = new List<RecordDraft>(); var edges = new List<EdgeDraft>(); var diagnostics = new List<VanillaAssetDiagnosticData>();
             var sources = new List<VanillaAssetSourceData>();
             var manager = new AssetsManager();
-            var mono = new MonoCecilTempGenerator(Path.Combine(dataRoot, "Managed"));
+            var mono = new MonoCecilTempGenerator(layout.ManagedDirectory);
             try
             {
                 manager.LoadClassPackage(classData); manager.MonoTempGenerator = mono;

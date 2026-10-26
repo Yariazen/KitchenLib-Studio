@@ -41,7 +41,7 @@ namespace KitchenLib.Studio.Editor
         public VanillaPreviewModel Decode(string gameRoot, VanillaObjectIdentity root,
             IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)
         {
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             string assetPath = Path.Combine(dataRoot, root.RelativePath);
             var manager = new AssetsManager();
             var context = new DecodeContext(gameRoot, _classDataPath, manager, progress, cancellationToken);

@@ -19,7 +19,7 @@ namespace KitchenLib.Studio.Editor
         public static PreviewTextureData DecodeInstalled(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken, string classDataPath)
         {
-            string dataRoot = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data");
+            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             return PlateUpMeshDecoder.WithField(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath,
                 fields => Decode(fields, dataRoot, cancellationToken));
         }

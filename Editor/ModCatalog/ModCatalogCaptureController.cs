@@ -60,7 +60,7 @@ namespace KitchenLib.Studio.Editor
                 workshopItems = workshop.Mods.Select(ToData).ToArray()
             };
             ModCatalogCaptureProtocol.WriteRequestAtomic(requestPath, request);
-            IPlateUpProcess process = _launcher.Launch(Path.Combine(installation.GameRoot, "PlateUp.exe"));
+            IPlateUpProcess process = _launcher.Launch(installation.ExecutablePath);
             return new ModCatalogCaptureSession(token, requestPath, responseDirectory, destinationPath,
                 installation.BuildId, startedUtc, timeout, process);
         }

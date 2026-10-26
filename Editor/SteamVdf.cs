@@ -103,7 +103,15 @@ namespace KitchenLib.Studio.Editor
                         if (AtEnd) Fail("Unterminated escape sequence");
                         char escaped = Peek;
                         Advance();
-                        value.Append(escaped == 'n' ? '\n' : escaped == 't' ? '\t' : escaped);
+                        switch (escaped)
+                        {
+                            case '\\': value.Append('\\'); break;
+                            case '"': value.Append('"'); break;
+                            case 'n': value.Append('\n'); break;
+                            case 'r': value.Append('\r'); break;
+                            case 't': value.Append('\t'); break;
+                            default: value.Append('\\').Append(escaped); break;
+                        }
                     }
                     else value.Append(current);
                 }

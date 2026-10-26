@@ -87,11 +87,20 @@ namespace KitchenLib.Studio.Editor
         {
             string requested = Environment.GetEnvironmentVariable("KITCHENLIB_STUDIO_PLATEUP_ROOT");
             var discovery = new PlateUpInstallationDiscovery();
-            PlateUpInstallationValidation validation = discovery.ValidateManualRoot(
-                string.IsNullOrWhiteSpace(requested) ? PlateUpInstallationResolver.StandardWindowsRoot : requested);
-            if (!validation.IsValid) throw new InvalidOperationException(string.Join(Environment.NewLine, validation.Diagnostics));
+            PlateUpInstallation installation;
+            if (string.IsNullOrWhiteSpace(requested))
+            {
+                installation = PlateUpCatalogImportMenu.ResolveInstallation(false);
+                if (installation == null) throw new InvalidOperationException("Select a PlateUp installation or set KITCHENLIB_STUDIO_PLATEUP_ROOT before regeneration.");
+            }
+            else
+            {
+                PlateUpInstallationValidation validation = discovery.ValidateSavedRoot(requested);
+                if (!validation.IsValid) throw new InvalidOperationException(string.Join(Environment.NewLine, validation.Diagnostics));
+                installation = validation.Installation;
+            }
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
-            RegenerationResult result = new KitchenLibStudioRegeneration(root).RegenerateAll(validation.Installation, CancellationToken.None);
+            RegenerationResult result = new KitchenLibStudioRegeneration(root).RegenerateAll(installation, CancellationToken.None);
             if (!result.Succeeded) throw new InvalidOperationException(result.FailedStage + ": " + result.Error);
         }
 

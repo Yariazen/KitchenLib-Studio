@@ -2,15 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using UnityEngine;
 
 namespace KitchenLib.Studio.Editor
 {
     public sealed class PlateUpInstallationDiscovery
     {
         public const string AppId = "1599600";
+        private readonly RuntimePlatform _platform;
+        private StringComparer PathComparer => PlateUpPlatformLayout.IsWindows(_platform) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
 
-        public PlateUpDiscoveryResult Discover() => Discover(DefaultSteamCandidates());
+        public PlateUpInstallationDiscovery() : this(PlateUpPlatformLayout.CurrentPlatform) { }
+        public PlateUpInstallationDiscovery(RuntimePlatform platform) { _platform = platform; }
+
+        public PlateUpDiscoveryResult Discover() => Discover(DefaultSteamCandidates(_platform,
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
 
         public PlateUpDiscoveryResult Discover(IEnumerable<string> steamCandidates)
         {
@@ -22,25 +30,26 @@ namespace KitchenLib.Studio.Editor
             foreach (string steamRoot in steamRoots)
             {
                 var libraries = new List<string> { steamRoot };
-                string libraryFile = Path.Combine(steamRoot, "steamapps", "libraryfolders.vdf");
-                if (File.Exists(libraryFile))
+                string[] libraryFiles = new[] { "steamapps", "config" }
+                    .Select(folder => Path.Combine(steamRoot, folder, "libraryfolders.vdf")).Where(File.Exists).ToArray();
+                foreach (string libraryFile in libraryFiles)
                 {
                     try { libraries.AddRange(ReadLibraryFolders(libraryFile)); }
-                    catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is SteamVdfParseException)
+                    catch (Exception exception) when (IsReadError(exception))
                     {
                         diagnostics.Add("Could not read libraryfolders.vdf: " + exception.Message);
                     }
                 }
-                else diagnostics.Add("Steam libraryfolders.vdf was not found.");
+                if (libraryFiles.Length == 0) diagnostics.Add("Steam libraryfolders.vdf was not found.");
 
                 foreach (string library in NormalizeDistinct(libraries))
                     TryDiscoverLibrary(steamRoot, library, installations, diagnostics);
             }
 
             PlateUpInstallation[] distinct = installations
-                .GroupBy(item => item.GameRoot, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(item => item.GameRoot, PathComparer)
                 .Select(group => group.First())
-                .OrderBy(item => item.GameRoot, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(item => item.GameRoot, PathComparer)
                 .ToArray();
             if (distinct.Length > 1) diagnostics.Add("Multiple valid PlateUp installations were found; select one manually.");
             return new PlateUpDiscoveryResult(distinct, diagnostics);
@@ -50,16 +59,17 @@ namespace KitchenLib.Studio.Editor
         {
             if (string.IsNullOrWhiteSpace(selectedPath))
                 return new PlateUpInstallationValidation(null, new[] { "No PlateUp folder was selected." });
-            string root;
-            try { root = Path.GetFullPath(selectedPath); }
-            catch (Exception exception) when (exception is ArgumentException || exception is NotSupportedException || exception is PathTooLongException)
+            try
             {
-                return new PlateUpInstallationValidation(null, new[] { "The selected path is invalid: " + exception.Message });
+                PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(selectedPath, _platform);
+                string[] diagnostics = DiagnoseInvalidLayout(layout).ToArray();
+                return new PlateUpInstallationValidation(diagnostics.Length == 0
+                    ? new PlateUpInstallation(layout, null, null, null, null, null) : null, diagnostics);
             }
-
-            string valid = FindValidGameRoot(root);
-            if (valid == null) return new PlateUpInstallationValidation(null, DiagnoseInvalidRoot(root));
-            return new PlateUpInstallationValidation(new PlateUpInstallation(valid, null, null, null, null, null), Array.Empty<string>());
+            catch (Exception exception) when (IsPathError(exception) || IsReadError(exception))
+            {
+                return new PlateUpInstallationValidation(null, new[] { "The selected PlateUp folder could not be read: " + exception.Message });
+            }
         }
 
         public PlateUpInstallationValidation ValidateSavedRoot(string selectedPath)
@@ -69,10 +79,8 @@ namespace KitchenLib.Studio.Editor
 
             string gameRoot = manual.Installation.GameRoot;
             DirectoryInfo current = new DirectoryInfo(gameRoot);
-            while (current != null && !string.Equals(current.Name, "common", StringComparison.OrdinalIgnoreCase))
-                current = current.Parent;
-            if (current?.Parent == null || !string.Equals(current.Parent.Name, "steamapps", StringComparison.OrdinalIgnoreCase))
-                return manual;
+            while (current != null && !PathComparer.Equals(current.Name, "common")) current = current.Parent;
+            if (current?.Parent == null || !PathComparer.Equals(current.Parent.Name, "steamapps")) return manual;
 
             string libraryRoot = current.Parent.Parent?.FullName;
             string manifestPath = libraryRoot == null ? null : Path.Combine(libraryRoot, "steamapps", "appmanifest_" + AppId + ".acf");
@@ -81,61 +89,57 @@ namespace KitchenLib.Studio.Editor
             var installations = new List<PlateUpInstallation>();
             var diagnostics = new List<string>();
             TryDiscoverLibrary(libraryRoot, libraryRoot, installations, diagnostics);
-            PlateUpInstallation match = installations.FirstOrDefault(item =>
-                string.Equals(item.GameRoot, gameRoot, StringComparison.OrdinalIgnoreCase));
+            PlateUpInstallation match = installations.FirstOrDefault(item => PathComparer.Equals(item.GameRoot, gameRoot));
             if (match != null) return new PlateUpInstallationValidation(match, diagnostics);
             if (diagnostics.Count == 0) diagnostics.Add("The saved PlateUp folder does not match its Steam manifest.");
             return new PlateUpInstallationValidation(null, diagnostics);
         }
 
-        private static void TryDiscoverLibrary(string steamRoot, string libraryRoot, ICollection<PlateUpInstallation> installations, ICollection<string> diagnostics)
+        private void TryDiscoverLibrary(string steamRoot, string libraryRoot, ICollection<PlateUpInstallation> installations, ICollection<string> diagnostics)
         {
             string manifestPath = Path.Combine(libraryRoot, "steamapps", "appmanifest_" + AppId + ".acf");
             if (!File.Exists(manifestPath))
             {
-                diagnostics.Add("PlateUp manifest was not found in a Steam library.");
+                diagnostics.Add("PlateUp manifest was not found in a Steam library: " + libraryRoot);
                 return;
             }
 
-            SteamVdfNode appState;
-            try { appState = SteamVdf.Parse(File.ReadAllText(manifestPath)).GetObject("AppState"); }
-            catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException || exception is SteamVdfParseException)
+            try
             {
-                diagnostics.Add("PlateUp manifest could not be read: " + exception.Message);
-                return;
-            }
-            if (appState == null || !string.Equals(appState.GetString("appid"), AppId, StringComparison.Ordinal))
-            {
-                diagnostics.Add("PlateUp manifest has the wrong app ID.");
-                return;
-            }
-            if (!string.Equals(appState.GetString("StateFlags"), "4", StringComparison.Ordinal))
-            {
-                diagnostics.Add("PlateUp installation is incomplete or updating.");
-                return;
-            }
+                SteamVdfNode appState = SteamVdf.Parse(File.ReadAllText(manifestPath)).GetObject("AppState");
+                if (appState == null || !string.Equals(appState.GetString("appid"), AppId, StringComparison.Ordinal))
+                {
+                    diagnostics.Add("PlateUp manifest has the wrong app ID.");
+                    return;
+                }
+                if (!string.Equals(appState.GetString("StateFlags"), "4", StringComparison.Ordinal))
+                {
+                    diagnostics.Add("PlateUp installation is incomplete or updating.");
+                    return;
+                }
 
-            string installDir = appState.GetString("installdir");
-            if (string.IsNullOrWhiteSpace(installDir) || !string.Equals(Path.GetFileName(installDir), installDir, StringComparison.Ordinal))
-            {
-                diagnostics.Add("PlateUp manifest contains an invalid install directory.");
-                return;
+                string installDir = appState.GetString("installdir");
+                // Reject either separator on every host; Path.GetFileName alone is host-dependent.
+                if (string.IsNullOrWhiteSpace(installDir) || installDir == "." || installDir == ".."
+                    || installDir.IndexOfAny(new[] { '/', '\\', ':' }) >= 0 || Path.IsPathRooted(installDir))
+                {
+                    diagnostics.Add("PlateUp manifest contains an invalid install directory.");
+                    return;
+                }
+                PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(Path.Combine(libraryRoot, "steamapps", "common", installDir), _platform);
+                string[] invalid = DiagnoseInvalidLayout(layout).ToArray();
+                if (invalid.Length != 0)
+                {
+                    foreach (string diagnostic in invalid) diagnostics.Add(diagnostic);
+                    return;
+                }
+                installations.Add(new PlateUpInstallation(layout, steamRoot, libraryRoot,
+                    Path.Combine(libraryRoot, "steamapps", "workshop", "content", AppId), manifestPath, appState.GetString("buildid")));
             }
-            string candidate = Path.Combine(libraryRoot, "steamapps", "common", installDir);
-            string gameRoot = FindValidGameRoot(candidate);
-            if (gameRoot == null)
+            catch (Exception exception) when (IsReadError(exception) || IsPathError(exception))
             {
-                foreach (string diagnostic in DiagnoseInvalidRoot(candidate)) diagnostics.Add(diagnostic);
-                return;
+                diagnostics.Add("PlateUp manifest or installation could not be read: " + exception.Message);
             }
-
-            installations.Add(new PlateUpInstallation(
-                gameRoot,
-                steamRoot,
-                libraryRoot,
-                Path.Combine(libraryRoot, "steamapps", "workshop", "content", AppId),
-                manifestPath,
-                appState.GetString("buildid")));
         }
 
         private static IEnumerable<string> ReadLibraryFolders(string path)
@@ -144,74 +148,96 @@ namespace KitchenLib.Studio.Editor
                 ?? throw new SteamVdfParseException("Missing libraryfolders object", 1, 1);
             foreach (KeyValuePair<string, SteamVdfNode> pair in folders.Objects)
             {
-                if (int.TryParse(pair.Key, out _) && !string.IsNullOrWhiteSpace(pair.Value.GetString("path")))
+                if (IsLibraryIndex(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value.GetString("path")))
                     yield return pair.Value.GetString("path");
             }
             foreach (KeyValuePair<string, string> pair in folders.Values)
             {
-                if (int.TryParse(pair.Key, out _) && !string.IsNullOrWhiteSpace(pair.Value)) yield return pair.Value;
+                if (IsLibraryIndex(pair.Key) && !string.IsNullOrWhiteSpace(pair.Value)) yield return pair.Value;
             }
         }
 
-        private static List<string> NormalizeDistinct(IEnumerable<string> paths)
+        private static bool IsLibraryIndex(string key) => !string.IsNullOrEmpty(key) && key.All(value => value >= '0' && value <= '9');
+
+        private List<string> NormalizeDistinct(IEnumerable<string> paths)
         {
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var seen = new HashSet<string>(PathComparer);
             var result = new List<string>();
             foreach (string path in paths ?? Array.Empty<string>())
             {
                 if (string.IsNullOrWhiteSpace(path)) continue;
                 try
                 {
-                    string normalized = Path.GetFullPath(path.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                    string normalized = CanonicalizePath(Path.GetFullPath(path));
+                    string volume = Path.GetPathRoot(normalized);
+                    if (normalized.Length > volume.Length) normalized = normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     if (seen.Add(normalized)) result.Add(normalized);
                 }
-                catch (Exception exception) when (exception is ArgumentException || exception is NotSupportedException || exception is PathTooLongException) { }
+                catch (Exception exception) when (IsPathError(exception) || exception is PathTooLongException) { }
             }
             return result;
         }
 
-        private static string FindValidGameRoot(string root)
+        private static string CanonicalizePath(string path)
         {
-            if (IsValidGameRoot(root)) return Path.GetFullPath(root);
-            string name = Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-            string nested = string.IsNullOrEmpty(name) ? null : Path.Combine(root, name);
-            return nested != null && IsValidGameRoot(nested) ? Path.GetFullPath(nested) : null;
+            // Linux's conventional Steam roots often point to the same directory through symlinks.
+            if (PlateUpPlatformLayout.IsWindows(PlateUpPlatformLayout.CurrentPlatform)) return path;
+            IntPtr resolved = IntPtr.Zero;
+            try
+            {
+                resolved = RealPath(path, IntPtr.Zero);
+                return resolved == IntPtr.Zero ? path : Marshal.PtrToStringAnsi(resolved) ?? path;
+            }
+            catch (DllNotFoundException) { return path; }
+            catch (EntryPointNotFoundException) { return path; }
+            finally { if (resolved != IntPtr.Zero) Free(resolved); }
         }
 
-        private static bool IsValidGameRoot(string root)
+        [DllImport("libc", EntryPoint = "realpath", SetLastError = true)]
+        private static extern IntPtr RealPath(string path, IntPtr buffer);
+        [DllImport("libc", EntryPoint = "free")]
+        private static extern void Free(IntPtr pointer);
+
+        private static IEnumerable<string> DiagnoseInvalidLayout(PlateUpPlatformLayout layout)
         {
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;
-            string data = Path.Combine(root, "PlateUp_Data");
-            return File.Exists(Path.Combine(root, "PlateUp.exe"))
-                && File.Exists(Path.Combine(data, "Managed", "Kitchen.GameData.dll"))
-                && HasSupportedAsset(data);
+            if (!File.Exists(layout.ExecutablePath)) yield return "PlateUp executable is missing: " + layout.ExecutablePath;
+            if (!File.Exists(Path.Combine(layout.ManagedDirectory, "Kitchen.GameData.dll")))
+                yield return "Kitchen.GameData.dll is missing from " + layout.ManagedDirectory;
+            if (!HasSupportedAsset(layout.DataRoot)) yield return "No supported serialized asset file was found in " + layout.DataRoot;
         }
 
-        private static bool HasSupportedAsset(string dataRoot)
-        {
-            if (!Directory.Exists(dataRoot)) return false;
-            return File.Exists(Path.Combine(dataRoot, "resources.assets"))
-                || File.Exists(Path.Combine(dataRoot, "globalgamemanagers.assets"))
-                || Directory.GetFiles(dataRoot, "sharedassets*.assets", SearchOption.TopDirectoryOnly).Length > 0;
-        }
+        private static bool HasSupportedAsset(string dataRoot) => Directory.Exists(dataRoot) &&
+            (File.Exists(Path.Combine(dataRoot, "resources.assets")) || File.Exists(Path.Combine(dataRoot, "globalgamemanagers.assets"))
+            || Directory.EnumerateFiles(dataRoot, "sharedassets*.assets", SearchOption.TopDirectoryOnly).Any());
 
-        private static IEnumerable<string> DiagnoseInvalidRoot(string root)
-        {
-            string data = Path.Combine(root, "PlateUp_Data");
-            if (!File.Exists(Path.Combine(root, "PlateUp.exe"))) yield return "PlateUp.exe is missing.";
-            if (!File.Exists(Path.Combine(data, "Managed", "Kitchen.GameData.dll"))) yield return "PlateUp_Data/Managed/Kitchen.GameData.dll is missing.";
-            if (!HasSupportedAsset(data)) yield return "No supported serialized asset file was found in PlateUp_Data.";
-        }
-
-        private static IEnumerable<string> DefaultSteamCandidates()
+        public static IReadOnlyList<string> DefaultSteamCandidates(RuntimePlatform platform, string homeDirectory)
         {
             var candidates = new List<string>();
-            AddRegistry(candidates, Registry.CurrentUser, @"Software\Valve\Steam", "SteamPath");
-            AddRegistry(candidates, Registry.LocalMachine, @"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath");
-            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-            if (!string.IsNullOrEmpty(programFilesX86)) candidates.Add(Path.Combine(programFilesX86, "Steam"));
+            if (PlateUpPlatformLayout.IsWindows(platform))
+            {
+                AddRegistry(candidates, Registry.CurrentUser, @"Software\Valve\Steam", "SteamPath");
+                AddRegistry(candidates, Registry.LocalMachine, @"SOFTWARE\Valve\Steam", "InstallPath");
+                AddRegistry(candidates, Registry.LocalMachine, @"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath");
+                string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                if (!string.IsNullOrEmpty(programFiles)) candidates.Add(Path.Combine(programFiles, "Steam"));
+            }
+            else if (!string.IsNullOrWhiteSpace(homeDirectory))
+            {
+                if (PlateUpPlatformLayout.IsMac(platform))
+                    candidates.Add(Path.Combine(homeDirectory, "Library", "Application Support", "Steam"));
+                else if (platform == RuntimePlatform.LinuxEditor || platform == RuntimePlatform.LinuxPlayer)
+                {
+                    candidates.Add(Path.Combine(homeDirectory, ".local", "share", "Steam"));
+                    candidates.Add(Path.Combine(homeDirectory, ".steam", "steam"));
+                    candidates.Add(Path.Combine(homeDirectory, ".steam", "root"));
+                    candidates.Add(Path.Combine(homeDirectory, ".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"));
+                }
+            }
             return candidates;
         }
+
+        private static bool IsReadError(Exception exception) => exception is IOException || exception is UnauthorizedAccessException || exception is SteamVdfParseException;
+        private static bool IsPathError(Exception exception) => exception is ArgumentException || exception is NotSupportedException;
 
         private static void AddRegistry(ICollection<string> candidates, RegistryKey hive, string keyPath, string valueName)
         {
@@ -222,7 +248,7 @@ namespace KitchenLib.Studio.Editor
                     if (key?.GetValue(valueName) is string value) candidates.Add(value.Replace('/', Path.DirectorySeparatorChar));
                 }
             }
-            catch (Exception exception) when (exception is UnauthorizedAccessException || exception is System.Security.SecurityException) { }
+            catch (Exception exception) when (exception is UnauthorizedAccessException || exception is System.Security.SecurityException || exception is PlatformNotSupportedException) { }
         }
     }
 }

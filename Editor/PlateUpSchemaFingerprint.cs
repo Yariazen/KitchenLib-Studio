@@ -23,7 +23,7 @@ namespace KitchenLib.Studio.Editor
 
         public static PlateUpSchemaFingerprint FromInstalledAssembly(string gameRoot, string unityVersion, string schemaFingerprint)
         {
-            string assemblyPath = Path.Combine(gameRoot, "PlateUp_Data", "Managed", "Kitchen.GameData.dll");
+            string assemblyPath = Path.Combine(PlateUpPlatformLayout.ResolveLayout(gameRoot).ManagedDirectory, "Kitchen.GameData.dll");
             if (!File.Exists(assemblyPath)) throw new FileNotFoundException("Installed Kitchen.GameData.dll was not found.", assemblyPath);
             return new PlateUpSchemaFingerprint(unityVersion, "Kitchen.GameData", HashFile(assemblyPath), schemaFingerprint);
         }

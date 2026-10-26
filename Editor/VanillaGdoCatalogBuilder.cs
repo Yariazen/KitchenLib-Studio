@@ -42,7 +42,7 @@ namespace KitchenLib.Studio.Editor
             var assets = new List<VanillaGdoCatalogAssetData>();
             foreach (string relativePath in assetPaths)
             {
-                string fullPath = Path.Combine(installation.GameRoot, "PlateUp_Data", relativePath.Replace('/', Path.DirectorySeparatorChar));
+                string fullPath = Path.Combine(installation.DataRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
                 if (!File.Exists(fullPath)) throw new InvalidDataException("Scanned asset file is missing: " + relativePath);
                 assets.Add(new VanillaGdoCatalogAssetData { relativePath = relativePath, sha256 = PlateUpSchemaFingerprint.HashFile(fullPath) });
             }

@@ -17,7 +17,7 @@ namespace KitchenLib.Studio.Editor
             string root = Path.GetFullPath(dataRoot ?? string.Empty);
             string path = Path.GetFullPath(Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar)));
             if (!path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                throw new ArgumentException("Resource path must remain beneath PlateUp_Data.", nameof(relativePath));
+                throw new ArgumentException("Resource path must remain beneath the PlateUp data directory.", nameof(relativePath));
             using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 if (offset > stream.Length || size > stream.Length - offset) throw new EndOfStreamException();

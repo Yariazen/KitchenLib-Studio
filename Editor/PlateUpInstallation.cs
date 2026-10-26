@@ -6,8 +6,14 @@ namespace KitchenLib.Studio.Editor
     public sealed class PlateUpInstallation
     {
         public PlateUpInstallation(string gameRoot, string steamRoot, string libraryRoot, string workshopRoot, string manifestPath, string buildId)
+            : this(PlateUpPlatformLayout.ResolveLayout(gameRoot), steamRoot, libraryRoot, workshopRoot, manifestPath, buildId) { }
+
+        internal PlateUpInstallation(PlateUpPlatformLayout layout, string steamRoot, string libraryRoot, string workshopRoot, string manifestPath, string buildId)
         {
-            GameRoot = gameRoot;
+            GameRoot = layout.GameRoot;
+            DataRoot = layout.DataRoot;
+            ManagedDirectory = layout.ManagedDirectory;
+            ExecutablePath = layout.ExecutablePath;
             SteamRoot = steamRoot;
             LibraryRoot = libraryRoot;
             WorkshopRoot = workshopRoot;
@@ -16,6 +22,9 @@ namespace KitchenLib.Studio.Editor
         }
 
         public string GameRoot { get; }
+        public string DataRoot { get; }
+        public string ManagedDirectory { get; }
+        public string ExecutablePath { get; }
         public string SteamRoot { get; }
         public string LibraryRoot { get; }
         public string WorkshopRoot { get; }

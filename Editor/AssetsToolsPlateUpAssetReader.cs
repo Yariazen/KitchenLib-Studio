@@ -23,12 +23,12 @@ namespace KitchenLib.Studio.Editor
 
         public VanillaGdoScanResult Scan(string gameRoot, IProgress<VanillaGdoScanProgress> progress, CancellationToken cancellationToken)
         {
-            string managedAssembly = Path.Combine(gameRoot ?? string.Empty, "PlateUp_Data", "Managed", "Kitchen.GameData.dll");
+            string managedAssembly = Path.Combine(PlateUpPlatformLayout.ResolveLayout(gameRoot).ManagedDirectory, "Kitchen.GameData.dll");
             if (!File.Exists(managedAssembly))
             {
                 return new VanillaGdoScanResult(Array.Empty<VanillaGdoScanEntry>(), new[]
                 {
-                    new VanillaGdoScanDiagnostic(VanillaGdoDiagnosticSeverity.Fatal, "missing-managed-assembly", "PlateUp_Data/Managed/Kitchen.GameData.dll is missing.")
+                    new VanillaGdoScanDiagnostic(VanillaGdoDiagnosticSeverity.Fatal, "missing-managed-assembly", "Kitchen.GameData.dll is missing from the selected installation's Managed directory.")
                 });
             }
 
@@ -112,8 +112,9 @@ namespace KitchenLib.Studio.Editor
 
         public IReadOnlyList<PlateUpAssetObject> Read(string gameRoot, IProgress<VanillaGdoScanProgress> progress, CancellationToken cancellationToken)
         {
-            string dataRoot = Path.Combine(gameRoot, "PlateUp_Data");
-            string managedRoot = Path.Combine(dataRoot, "Managed");
+            PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(gameRoot);
+            string dataRoot = layout.DataRoot;
+            string managedRoot = layout.ManagedDirectory;
             if (!File.Exists(_classDataPath))
                 throw new FileNotFoundException("The editor-only AssetsTools.NET class database is missing.", _classDataPath);
 

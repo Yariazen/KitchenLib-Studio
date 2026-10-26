@@ -21,7 +21,7 @@ namespace KitchenLib.Studio.Editor
         public IPlateUpProcess Launch(string executablePath)
         {
             if (string.IsNullOrWhiteSpace(executablePath) || !File.Exists(executablePath))
-                throw new FileNotFoundException("PlateUp.exe was not found.", executablePath);
+                throw new FileNotFoundException("The PlateUp executable was not found.", executablePath);
             var start = new ProcessStartInfo(executablePath)
             {
                 WorkingDirectory = Path.GetDirectoryName(executablePath),
