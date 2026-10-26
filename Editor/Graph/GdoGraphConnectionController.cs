@@ -67,13 +67,17 @@ namespace KitchenLib.Studio.Editor.Graph
                 if (!StudioCustomGraphPipeline.CanConnect(_graph, outputElementId, outputPortPath, inputElementId, inputPath))
                     throw new ArgumentException("Custom connection is incompatible or a port is full.");
                 int customGroup = Begin("Connect custom graph node");
-                GdoGraphEdgeRecord customEdge = GdoBundleGraphRepository.AddEdge(_graph,
-                    outputElementId, outputPortPath, inputElementId, inputPath, order);
-                // Structurally valid edges may leave a multi-input node incomplete while wiring.
-                // Keep the authored edge; failed projection preserves companions and blocks builds.
-                GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
-                Undo.CollapseUndoOperations(customGroup);
-                return customEdge;
+                try
+                {
+                    GdoGraphEdgeRecord customEdge = GdoBundleGraphRepository.AddEdge(_graph,
+                        outputElementId, outputPortPath, inputElementId, inputPath, order);
+                    // Structurally valid edges may leave a multi-input node incomplete while wiring.
+                    // Keep the authored edge; failed projection preserves companions and blocks builds.
+                    GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+                    Undo.CollapseUndoOperations(customGroup);
+                    return customEdge;
+                }
+                catch { Undo.RevertAllDownToGroup(customGroup); throw; }
             }
             string exactType = GdoGraphConnectionTypeResolver.ExactOutputType(
                 _graph, outputElementId, outputPortPath);
