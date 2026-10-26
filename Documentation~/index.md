@@ -14,6 +14,14 @@ This is an intentional placeholder, not an installable repository. Replace it wi
 
 The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license and `classdata.tpk` redistribution provenance are resolved.
 
+Repository verification creates its Unity project outside the checkout and discards it after import. Run a local clean import with:
+
+```powershell
+pwsh -File Tools~/Verify-CleanUnityImport.ps1 -PackageRoot . -UnityPath <path-to-Unity-2020.3.48f1>
+```
+
+`Tools~/New-ReleaseArchive.ps1` builds the distributable zip from an explicit allowlist containing package metadata, documentation, licenses, and `Editor/**`. It excludes `.github`, `Tools~`, Git metadata, and every non-package path. The GitHub Unity job is enabled only on a licensed self-hosted runner labeled `unity-2020.3`, with repository variable `KITCHENLIB_STUDIO_UNITY_IMPORT=enabled` and `UNITY_2020_3_PATH` pointing to Unity. It imports the package and never runs an internal test suite.
+
 ## Generated data and source control
 
 The consuming project's `Assets/KitchenLibStudio.Generated/` directory is owned by the generator and may be replaced completely. Add these rules to the consuming project's `.gitignore` (the package's ignore file does not configure your project):
