@@ -1,0 +1,7 @@
+{
+  "name": "KitchenLib.Studio.Bootstrap",
+  "references": [],
+  "includePlatforms": ["Editor"],
+  "overrideReferences": true,
+  "precompiledReferences": []
+}

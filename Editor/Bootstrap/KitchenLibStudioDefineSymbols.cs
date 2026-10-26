@@ -1,0 +1,31 @@
+using System;
+using System.Linq;
+using UnityEditor;
+
+namespace KitchenLib.Studio.Editor
+{
+    public static class KitchenLibStudioDefineSymbols
+    {
+        public const string MirrorsSymbol = "KITCHENLIB_STUDIO_MIRRORS";
+        public static bool MirrorsEnabled => PlayerSettings.GetScriptingDefineSymbolsForGroup(
+            BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget)).Split(';').Contains(MirrorsSymbol);
+
+        public static void SetMirrorsEnabled(bool enabled)
+        {
+            // Cover every installed/known build-target group so switching targets cannot revive stale mirrors.
+            foreach (BuildTargetGroup group in Enum.GetValues(typeof(BuildTargetGroup)))
+            {
+                if (group == BuildTargetGroup.Unknown) continue;
+                var field = typeof(BuildTargetGroup).GetField(group.ToString());
+                if (field == null || Attribute.IsDefined(field, typeof(ObsoleteAttribute))) continue;
+                string current = PlayerSettings.GetScriptingDefineSymbolsForGroup(group);
+                var symbols = current.Split(';').Where(value => !string.IsNullOrWhiteSpace(value)).ToList();
+                bool present = symbols.Contains(MirrorsSymbol);
+                if (present == enabled) continue;
+                symbols.RemoveAll(value => value == MirrorsSymbol);
+                if (enabled) symbols.Add(MirrorsSymbol);
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(group, string.Join(";", symbols));
+            }
+        }
+    }
+}

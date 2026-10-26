@@ -24,7 +24,7 @@ namespace KitchenLib.Studio.Editor
 
     public sealed class KitchenLibStudioRegeneration
     {
-        private static readonly string[] Stages = { "mirrors", "gdo-catalogue", "snapshot-catalogue", "asset-refresh" };
+        private static readonly string[] Stages = { "mirrors", "asset-refresh", "queue-catalogues" };
         private readonly string _projectRoot; private readonly IKitchenLibStudioRegenerationStageRunner _runner;
         private readonly IKitchenLibStudioRegenerationFileSystem _files;
         public KitchenLibStudioRegeneration(string projectRoot, IKitchenLibStudioRegenerationStageRunner runner = null,
@@ -50,6 +50,7 @@ namespace KitchenLib.Studio.Editor
         {
             try
             {
+                KitchenLibStudioDefineSymbols.SetMirrorsEnabled(false);
                 foreach (string target in CleanTargets(_projectRoot)) { token.ThrowIfCancellationRequested(); _files.Delete(target); }
             }
             catch (Exception exception)
@@ -62,24 +63,20 @@ namespace KitchenLib.Studio.Editor
         public static IReadOnlyList<string> CleanTargets(string projectRoot)
         {
             string root = Path.GetFullPath(projectRoot ?? throw new ArgumentNullException(nameof(projectRoot)));
-            string unity = Path.Combine(root, "KitchenLib Studio");
             return new[]
             {
-                Path.Combine(unity, "Assets", "KitchenLibStudio", "Generated"),
-                Path.Combine(unity, "Assets", "KitchenLibStudio", "Generated.meta"),
-                Path.Combine(unity, "Assets", GdoBundleBuilder.StagingRoot.Substring("Assets/".Length).Replace('/', Path.DirectorySeparatorChar)),
-                Path.Combine(unity, GdoBundleBuilder.StagingRoot.Replace('/', Path.DirectorySeparatorChar) + ".meta"),
-                Path.Combine(unity, "Library", "KitchenLibStudio", "Snapshots")
+                Path.Combine(root, KitchenLibStudioGeneratedPaths.AssetRoot),
+                Path.Combine(root, KitchenLibStudioGeneratedPaths.AssetRoot + ".meta"),
+                Path.Combine(root, KitchenLibStudioGeneratedPaths.StateRoot)
             };
         }
-
         [MenuItem("KitchenLib Studio/Maintenance/Regenerate All")]
         public static void RegenerateAllMenu() => RunMenu(false);
         [MenuItem("KitchenLib Studio/Maintenance/Clean Generated Environment…")]
         public static void CleanAndRegenerateMenu()
         {
             if (EditorUtility.DisplayDialog("Clean generated KitchenLib Studio environment?",
-                "This removes only KitchenLib Studio generated mirrors, catalogues, cache, and staging files. ModContent and validation proof assets are preserved.",
+                "This removes KitchenLib Studio generated mirrors, catalogues, and local state. Your authored assets are preserved.",
                 "Clean and regenerate", "Cancel")) RunMenu(true);
         }
 
@@ -90,7 +87,7 @@ namespace KitchenLib.Studio.Editor
             PlateUpInstallation installation;
             if (string.IsNullOrWhiteSpace(requested))
             {
-                installation = PlateUpCatalogImportMenu.ResolveInstallation(false);
+                installation = PlateUpInstallationSettings.ResolveInstallation(false);
                 if (installation == null) throw new InvalidOperationException("Select a PlateUp installation or set KITCHENLIB_STUDIO_PLATEUP_ROOT before regeneration.");
             }
             else
@@ -99,20 +96,20 @@ namespace KitchenLib.Studio.Editor
                 if (!validation.IsValid) throw new InvalidOperationException(string.Join(Environment.NewLine, validation.Diagnostics));
                 installation = validation.Installation;
             }
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            string root = KitchenLibStudioGeneratedPaths.ProjectRoot;
             RegenerationResult result = new KitchenLibStudioRegeneration(root).RegenerateAll(installation, CancellationToken.None);
             if (!result.Succeeded) throw new InvalidOperationException(result.FailedStage + ": " + result.Error);
         }
 
         private static void RunMenu(bool clean)
         {
-            PlateUpInstallation installation = PlateUpCatalogImportMenu.ResolveInstallation(true); if (installation == null) return;
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ".."));
+            PlateUpInstallation installation = PlateUpInstallationSettings.ResolveInstallation(true); if (installation == null) return;
+            string root = KitchenLibStudioGeneratedPaths.ProjectRoot;
             RegenerationResult result = clean
                 ? new KitchenLibStudioRegeneration(root).CleanAndRegenerate(installation, CancellationToken.None)
                 : new KitchenLibStudioRegeneration(root).RegenerateAll(installation, CancellationToken.None);
             if (!result.Succeeded) EditorUtility.DisplayDialog("KitchenLib Studio regeneration failed", result.FailedStage + ": " + result.Error, "OK");
-            else Debug.Log("KitchenLib Studio generated environment regenerated successfully.");
+            else Debug.Log("KitchenLib Studio mirrors published. Catalogue refresh will run when authoring finishes loading.");
         }
 
         private sealed class DefaultRunner : IKitchenLibStudioRegenerationStageRunner
@@ -122,9 +119,8 @@ namespace KitchenLib.Studio.Editor
                 switch (stage)
                 {
                     case "mirrors": MirrorGenerationMenu.GenerateMirrors(installation.GameRoot); break;
-                    case "gdo-catalogue": PlateUpCatalogImportController.ImportGdoBatch(installation, token); break;
-                    case "snapshot-catalogue": PlateUpCatalogImportController.ImportSnapshotBatch(installation, token); break;
-                    case "asset-refresh": AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate); break;
+                    case "queue-catalogues": KitchenLibStudioCatalogueBridge.Request(installation); break;
+                    case "asset-refresh": KitchenLibStudioBootstrap.CompletePublication(); break;
                     default: throw new ArgumentOutOfRangeException(nameof(stage));
                 }
             }

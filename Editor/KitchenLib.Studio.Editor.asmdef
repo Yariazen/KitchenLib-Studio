@@ -1,6 +1,7 @@
 {
   "name": "KitchenLib.Studio.Editor",
   "references": [
+    "KitchenLib.Studio.Bootstrap",
     "Kitchen.GameData",
     "Sirenix.Serialization"
   ],
@@ -11,6 +12,7 @@
     "Mono.Cecil.Rocks.dll"
   ],
   "overrideReferences": true,
+  "defineConstraints": ["KITCHENLIB_STUDIO_MIRRORS"],
   "includePlatforms": [
     "Editor"
   ]
