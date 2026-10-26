@@ -149,16 +149,26 @@ foreach ($entry in $expectedHashes.GetEnumerator()) {
     }
 }
 
-# The upstream license texts are audited separately from the five binary/data payloads.
+# The upstream license texts are audited separately from the five byte-exact binary/data payloads.
+# Decode strictly as UTF-8 and normalize CRLF/CR to LF so Git's checkout line endings do not change the audit.
 $expectedLicenseHashes = [ordered]@{
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-AssetsTools.NET.txt' = 'AB26018F961D37D489BCD0F8277B602D1A41586CDA867E59173778C7214AE29F'
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-Mono.Cecil.txt' = '62DAD7936FC1214D0187B1DD27BD68EC055AF168B7FD1989CC8E36E0E2B9A990'
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE-AssetsTools.NET.txt' = '4BB83110E088086BCE348F63B34E4BFBE1FAEF121F458C16810105A3113ECA8B'
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE-Mono.Cecil.txt' = '13D58ECBED676511C0C4C4009BFF107025E50007FF5E7901DC562700EC62509E'
 }
+$strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
 foreach ($entry in $expectedLicenseHashes.GetEnumerator()) {
     $path = Join-Path $packageRoot $entry.Key
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
-    if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -cne $entry.Value) {
-        Add-Failure "upstream license text hash changed: $([System.IO.Path]::GetFileName($entry.Key))"
+    try {
+        $text = $strictUtf8.GetString([IO.File]::ReadAllBytes($path))
+        $normalized = [regex]::Replace($text, "`r`n|`r", "`n")
+        $hash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($strictUtf8.GetBytes($normalized)))
+        if ($hash -cne $entry.Value) {
+            Add-Failure "upstream license text hash changed: $([System.IO.Path]::GetFileName($entry.Key))"
+        }
+    }
+    catch {
+        Add-Failure "upstream license text is not readable UTF-8: $([System.IO.Path]::GetFileName($entry.Key))"
     }
 }
 
