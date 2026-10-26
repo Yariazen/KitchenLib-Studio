@@ -1,8 +1,8 @@
 using UnityEditor;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public static class PlateUpInstallationSettings
+    internal static class PlateUpInstallationSettings
     {
         private const string PreferenceKey = "KitchenLibStudio.VanillaCatalog.PlateUpRoot";
         private static readonly PlateUpInstallationDiscovery Discovery = new PlateUpInstallationDiscovery();

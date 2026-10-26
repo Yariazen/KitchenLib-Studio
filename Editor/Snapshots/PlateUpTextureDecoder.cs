@@ -4,9 +4,11 @@ using System.Threading;
 using AssetsTools.NET;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class PlateUpTextureDecoder
+    internal static class PlateUpTextureDecoder
     {
         public static PreviewTextureData DecodeInstalled(string gameRoot, string relativeAssetPath, long pathId,
             CancellationToken cancellationToken)

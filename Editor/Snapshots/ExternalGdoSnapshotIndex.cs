@@ -5,14 +5,16 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    [Serializable] public sealed class ExternalGdoSnapshotIndexData
+    [Serializable] internal sealed class ExternalGdoSnapshotIndexData
     { public int schemaVersion = 1; public ExternalGdoSnapshotIndexEntry[] entries = Array.Empty<ExternalGdoSnapshotIndexEntry>(); }
-    [Serializable] public sealed class ExternalGdoSnapshotIndexEntry
+    [Serializable] internal sealed class ExternalGdoSnapshotIndexEntry
     { public int gdoId; public string gameObjectKey; public string sourceFingerprint; }
 
-    public static class ExternalGdoSnapshotIndexFile
+    internal static class ExternalGdoSnapshotIndexFile
     {
         private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false);
         public static ExternalGdoSnapshotIndexData Build(VanillaAssetCatalogData catalog)
@@ -57,7 +59,7 @@ namespace KitchenLib.Studio.Editor
         { Directory.CreateDirectory(Path.GetDirectoryName(path)); File.WriteAllBytes(path, Serialize(Build(catalog))); }
     }
 
-    public sealed class IndexedExternalGdoSnapshotService : IExternalGdoSnapshotService
+    internal sealed class IndexedExternalGdoSnapshotService : IExternalGdoSnapshotService
     {
         private readonly Dictionary<int, ExternalGdoSnapshotIndexEntry> _entries;
         private readonly SnapshotCache _cache;

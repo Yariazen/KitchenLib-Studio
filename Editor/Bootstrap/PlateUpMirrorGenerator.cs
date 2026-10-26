@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading;
 using UnityEditor.PackageManager;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public sealed class PlateUpMirrorGenerationResult
+    internal sealed class PlateUpMirrorGenerationResult
     {
         public string GeneratorVersion { get; internal set; }
         public string SourceFingerprint { get; internal set; }
@@ -16,7 +16,7 @@ namespace KitchenLib.Studio.Editor
             generatorVersion = GeneratorVersion, sourceFingerprint = SourceFingerprint, complete = true, outputFiles = OutputFiles };
     }
 
-    public sealed class PlateUpMirrorGenerator
+    internal sealed class PlateUpMirrorGenerator
     {
         // Bump the format revision when generation changes. A package release also changes this identity.
         public static string Version => "2/" + (PackageInfo.FindForAssembly(typeof(PlateUpMirrorGenerator).Assembly)?.version ?? "development");

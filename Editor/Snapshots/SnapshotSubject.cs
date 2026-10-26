@@ -3,11 +3,11 @@ using KitchenData;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public enum SnapshotSubjectKind { VanillaGameObjectKey, LocalGameObject, CustomGdo }
+    internal enum SnapshotSubjectKind { VanillaGameObjectKey, LocalGameObject, CustomGdo }
 
-    public sealed class SnapshotSubject
+    internal sealed class SnapshotSubject
     {
         private SnapshotSubject(SnapshotSubjectKind kind, string key, GameObject gameObject, GameDataObject gdo, string fieldPath)
         { Kind = kind; VanillaKey = key; GameObject = gameObject; Gdo = gdo; PrefabFieldPath = fieldPath; }

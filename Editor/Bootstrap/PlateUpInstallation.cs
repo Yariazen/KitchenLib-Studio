@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public sealed class PlateUpInstallation
+    internal sealed class PlateUpInstallation
     {
         public PlateUpInstallation(string gameRoot, string steamRoot, string libraryRoot, string workshopRoot, string manifestPath, string buildId)
             : this(PlateUpPlatformLayout.ResolveLayout(gameRoot), steamRoot, libraryRoot, workshopRoot, manifestPath, buildId) { }
@@ -32,7 +32,7 @@ namespace KitchenLib.Studio.Editor
         public string BuildId { get; }
     }
 
-    public sealed class PlateUpDiscoveryResult
+    internal sealed class PlateUpDiscoveryResult
     {
         public PlateUpDiscoveryResult(IEnumerable<PlateUpInstallation> installations, IEnumerable<string> diagnostics)
         {
@@ -45,7 +45,7 @@ namespace KitchenLib.Studio.Editor
         public bool RequiresManualSelection => Installations.Count != 1;
     }
 
-    public sealed class PlateUpInstallationValidation
+    internal sealed class PlateUpInstallationValidation
     {
         public PlateUpInstallationValidation(PlateUpInstallation installation, IEnumerable<string> diagnostics)
         {

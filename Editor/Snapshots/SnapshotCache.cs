@@ -5,10 +5,10 @@ using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
     [Serializable]
-    public sealed class SnapshotCacheMetadata
+    internal sealed class SnapshotCacheMetadata
     {
         public int width;
         public int height;
@@ -18,7 +18,7 @@ namespace KitchenLib.Studio.Editor
         public string[] diagnostics = Array.Empty<string>();
     }
 
-    public sealed class SnapshotCacheEntry
+    internal sealed class SnapshotCacheEntry
     {
         public SnapshotCacheEntry(string pngPath, byte[] pngBytes, SnapshotCacheMetadata metadata)
         { PngPath = pngPath; PngBytes = pngBytes; Metadata = metadata; }
@@ -27,7 +27,7 @@ namespace KitchenLib.Studio.Editor
         public SnapshotCacheMetadata Metadata { get; }
     }
 
-    public sealed class SnapshotCache
+    internal sealed class SnapshotCache
     {
         private static readonly byte[] PngSignature = { 137, 80, 78, 71, 13, 10, 26, 10 };
         private readonly string _root;

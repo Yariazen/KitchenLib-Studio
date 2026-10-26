@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public interface IPlateUpSnapshotCatalogReader
+    internal interface IPlateUpSnapshotCatalogReader
     {
         SnapshotCatalogScanResult Scan(string gameRoot, IProgress<SnapshotProgress> progress, CancellationToken cancellationToken);
     }
-    public sealed class SnapshotCatalogScanResult
+    internal sealed class SnapshotCatalogScanResult
     {
         public SnapshotCatalogScanResult(VanillaAssetCatalogData data) { Data = data; }
         public VanillaAssetCatalogData Data { get; }

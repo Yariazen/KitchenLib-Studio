@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class VanillaAssetRecord
+    internal sealed class VanillaAssetRecord
     {
         internal VanillaAssetRecord(VanillaAssetRecordData data, IEnumerable<VanillaAssetEdgeData> edges)
         {

@@ -6,6 +6,9 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Bootstrap;
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class GdoBundleGraphWindow : EditorWindow

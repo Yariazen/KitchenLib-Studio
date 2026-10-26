@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class VanillaAssetCatalogRepository
+    internal sealed class VanillaAssetCatalogRepository
     {
         private readonly string _path;
         private Dictionary<string, VanillaAssetRecord> _records = new Dictionary<string, VanillaAssetRecord>(StringComparer.Ordinal);

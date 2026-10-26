@@ -1,6 +1,6 @@
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class VanillaAssetCatalogBuilder
+    internal static class VanillaAssetCatalogBuilder
     {
         public static VanillaAssetCatalogData Build(VanillaAssetCatalogData data)
         { VanillaAssetCatalogFile.Validate(data); return data; }

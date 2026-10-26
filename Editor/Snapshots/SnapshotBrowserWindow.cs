@@ -8,9 +8,11 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class SnapshotBrowserWindow : EditorWindow
+    internal sealed class SnapshotBrowserWindow : EditorWindow
     {
         private const string PlateUpRootPreference = "KitchenLibStudio.VanillaCatalog.PlateUpRoot";
         private CancellationTokenSource _cancellation;

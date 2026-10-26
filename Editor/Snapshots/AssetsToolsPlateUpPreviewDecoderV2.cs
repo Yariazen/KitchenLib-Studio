@@ -7,9 +7,11 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class AssetsToolsPlateUpPreviewDecoder : IPlateUpPreviewDecoder
+    internal sealed class AssetsToolsPlateUpPreviewDecoder : IPlateUpPreviewDecoder
     {
         private const int MaximumNodes = 10000;
         private const int MaximumProperties = 4096;

@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class PlateUpSerializedResourceReader
+    internal static class PlateUpSerializedResourceReader
     {
         public const int MaximumReadBytes = 256 * 1024 * 1024;
 

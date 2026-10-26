@@ -3,6 +3,8 @@ using KitchenData;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class GdoReferenceField : VisualElement
@@ -18,7 +20,7 @@ namespace KitchenLib.Studio.Editor
         public GdoReferenceField(string label, string expectedTypeName, GdoOverlayValue value, Action<GdoOverlayValue> changed)
             : this(label, expectedTypeName, value, changed, ExternalGdoCatalogRepository.Current) { }
 
-        public GdoReferenceField(string label, string expectedTypeName, GdoOverlayValue value,
+        internal GdoReferenceField(string label, string expectedTypeName, GdoOverlayValue value,
             Action<GdoOverlayValue> changed, ExternalGdoCatalogRepository repository)
         {
             ExpectedTypeName = expectedTypeName;

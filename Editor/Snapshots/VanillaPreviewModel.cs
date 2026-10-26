@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public enum PreviewRendererKind { None, Mesh, SkinnedMesh, Sprite }
-    public enum PreviewSpritePackingRotation { None, FlipHorizontal, FlipVertical, Rotate180, Rotate90 }
+    internal enum PreviewRendererKind { None, Mesh, SkinnedMesh, Sprite }
+    internal enum PreviewSpritePackingRotation { None, FlipHorizontal, FlipVertical, Rotate180, Rotate90 }
 
-    public struct VanillaObjectIdentity
+    internal struct VanillaObjectIdentity
     {
         public VanillaObjectIdentity(string relativePath, long pathId, int classId, string className)
         { RelativePath = relativePath; PathId = pathId; ClassId = classId; ClassName = className; }
@@ -16,7 +16,7 @@ namespace KitchenLib.Studio.Editor
         public string ClassName { get; }
     }
 
-    public sealed class PreviewNodeData
+    internal sealed class PreviewNodeData
     {
         public string Name;
         public bool Active = true;
@@ -32,7 +32,7 @@ namespace KitchenLib.Studio.Editor
         public PreviewNodeData[] Children = Array.Empty<PreviewNodeData>();
     }
 
-    public sealed class VanillaPreviewModel
+    internal sealed class VanillaPreviewModel
     {
         public VanillaPreviewModel(PreviewNodeData root, PreviewMeshData[] meshes, string[] diagnostics)
             : this(root, meshes, Array.Empty<PreviewMaterialData>(), Array.Empty<PreviewTextureData>(),
@@ -52,7 +52,7 @@ namespace KitchenLib.Studio.Editor
         public string[] Diagnostics { get; }
     }
 
-    public sealed class PreviewMeshData
+    internal sealed class PreviewMeshData
     {
         public PreviewMeshData(string name, Vector3[] vertices, Vector3[] normals, Vector4[] tangents,
             Vector2[] uv0, int[][] submeshIndices, Bounds bounds)
@@ -75,9 +75,9 @@ namespace KitchenLib.Studio.Editor
         public Bounds Bounds { get; }
     }
 
-    public enum PreviewTextureEncoding { Raw }
+    internal enum PreviewTextureEncoding { Raw }
 
-    public sealed class PreviewTextureData
+    internal sealed class PreviewTextureData
     {
         public PreviewTextureData(string name, int width, int height, TextureFormat format, bool linear,
             byte[] data, PreviewTextureEncoding encoding, bool isCubemap = false)
@@ -102,32 +102,32 @@ namespace KitchenLib.Studio.Editor
         public bool IsCubemap { get; }
     }
 
-    public sealed class PreviewMaterialFloatData
+    internal sealed class PreviewMaterialFloatData
     {
         public PreviewMaterialFloatData(string name, float value) { Name = name ?? string.Empty; Value = value; }
         public string Name { get; } public float Value { get; }
     }
 
-    public sealed class PreviewMaterialColorData
+    internal sealed class PreviewMaterialColorData
     {
         public PreviewMaterialColorData(string name, Color value) { Name = name ?? string.Empty; Value = value; }
         public string Name { get; } public Color Value { get; }
     }
 
-    public sealed class PreviewMaterialVectorData
+    internal sealed class PreviewMaterialVectorData
     {
         public PreviewMaterialVectorData(string name, Vector4 value) { Name = name ?? string.Empty; Value = value; }
         public string Name { get; } public Vector4 Value { get; }
     }
 
-    public sealed class PreviewMaterialTextureData
+    internal sealed class PreviewMaterialTextureData
     {
         public PreviewMaterialTextureData(string name, int textureIndex, Vector2 scale, Vector2 offset)
         { Name = name ?? string.Empty; TextureIndex = textureIndex; Scale = scale; Offset = offset; }
         public string Name { get; } public int TextureIndex { get; } public Vector2 Scale { get; } public Vector2 Offset { get; }
     }
 
-    public sealed class PreviewMaterialData
+    internal sealed class PreviewMaterialData
     {
         public PreviewMaterialData(string name, string shaderName, PreviewMaterialFloatData[] floats,
             PreviewMaterialColorData[] colors, PreviewMaterialVectorData[] vectors, PreviewMaterialTextureData[] textures)
@@ -141,7 +141,7 @@ namespace KitchenLib.Studio.Editor
         public PreviewMaterialVectorData[] Vectors { get; } public PreviewMaterialTextureData[] Textures { get; }
     }
 
-    public sealed class PreviewSpriteData
+    internal sealed class PreviewSpriteData
     {
         public PreviewSpriteData(string name, int textureIndex, Rect rect, Vector2 pivot, Vector4 border,
             float pixelsPerUnit, PreviewSpritePackingRotation packingRotation)

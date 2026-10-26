@@ -4,9 +4,9 @@ using System.Linq;
 using UnityEditor.PackageManager;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public static class KitchenLibStudioGeneratedPaths
+    internal static class KitchenLibStudioGeneratedPaths
     {
         public const string AssetRoot = "Assets/KitchenLibStudio.Generated";
         public const string StateRoot = "Library/KitchenLibStudio";

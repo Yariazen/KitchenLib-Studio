@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class VanillaGameObjectPicker : VisualElement
+    internal sealed class VanillaGameObjectPicker : VisualElement
     {
         private readonly VanillaAssetCatalogRepository _repository;
         private readonly Action<VanillaAssetRecord> _selected;

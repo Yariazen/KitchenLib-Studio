@@ -7,6 +7,8 @@ using KitchenLib.Studio.Generated;
 using UnityEditor;
 using UnityEngine;
 
+using KitchenLib.Studio.Editor.Bootstrap;
+
 namespace KitchenLib.Studio.Editor
 {
     public static class GdoGraphAssetCommands

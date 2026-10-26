@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class SnapshotProgress
+    internal sealed class SnapshotProgress
     {
         public SnapshotProgress(string stage, int completed, int total) { Stage = stage; Completed = completed; Total = total; }
         public string Stage { get; }
@@ -11,7 +11,7 @@ namespace KitchenLib.Studio.Editor
         public int Total { get; }
     }
 
-    public interface IPlateUpPreviewDecoder
+    internal interface IPlateUpPreviewDecoder
     {
         VanillaPreviewModel Decode(string gameRoot, VanillaAssetRecord root,
             VanillaAssetCatalogData catalog, IProgress<SnapshotProgress> progress,

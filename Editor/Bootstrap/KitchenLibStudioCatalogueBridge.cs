@@ -2,10 +2,10 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     // The authoring assembly registers after mirror compilation. Bootstrap never depends on it.
-    public static class KitchenLibStudioCatalogueBridge
+    internal static class KitchenLibStudioCatalogueBridge
     {
         private const string PendingRootKey = "KitchenLibStudio.PendingCatalogueRoot";
         private static Action<PlateUpInstallation> _refresh;

@@ -3,16 +3,16 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class SnapshotRenderOptions
+    internal sealed class SnapshotRenderOptions
     {
         public SnapshotRenderOptions(int width, int height) { Width = width; Height = height; }
         public int Width { get; }
         public int Height { get; }
     }
 
-    public sealed class SnapshotRenderResult
+    internal sealed class SnapshotRenderResult
     {
         public SnapshotRenderResult(byte[] png, int width, int height, int visiblePixels, Bounds bounds)
         { PngBytes = png; Width = width; Height = height; VisiblePixelCount = visiblePixels; Bounds = bounds; }
@@ -23,7 +23,7 @@ namespace KitchenLib.Studio.Editor
         public Bounds Bounds { get; }
     }
 
-    public static class GameObjectSnapshotRenderer
+    internal static class GameObjectSnapshotRenderer
     {
         public static SnapshotRenderResult Render(GameObject source, SnapshotRenderOptions options)
         {

@@ -1,9 +1,9 @@
 using System;
 using System.Linq;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class ExternalGdoSnapshotSourceResolution
+    internal sealed class ExternalGdoSnapshotSourceResolution
     {
         private ExternalGdoSnapshotSourceResolution(bool succeeded, string gameObjectKey, string slot,
             string diagnostic)
@@ -26,7 +26,7 @@ namespace KitchenLib.Studio.Editor
             new ExternalGdoSnapshotSourceResolution(false, null, null, diagnostic);
     }
 
-    public static class ExternalGdoSnapshotSourceResolver
+    internal static class ExternalGdoSnapshotSourceResolver
     {
         private static readonly string[] PreferredSlots = { "IconPrefab", "DisplayPrefab", "Prefab" };
 

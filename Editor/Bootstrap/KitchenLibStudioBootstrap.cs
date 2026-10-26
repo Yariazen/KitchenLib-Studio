@@ -2,10 +2,10 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     [InitializeOnLoad]
-    public static class KitchenLibStudioBootstrap
+    internal static class KitchenLibStudioBootstrap
     {
         private static double _nextValidation;
         private static bool _reconciling;
@@ -106,7 +106,7 @@ namespace KitchenLib.Studio.Editor
         { KitchenLibStudioBootstrap.InvalidateMissingOutput(); }
     }
 
-    public sealed class KitchenLibStudioSetupWindow : EditorWindow
+    internal sealed class KitchenLibStudioSetupWindow : EditorWindow
     {
         [MenuItem("KitchenLib Studio/Setup…")]
         public static void ShowWindow() => GetWindow<KitchenLibStudioSetupWindow>(true, "KitchenLib Studio Setup");

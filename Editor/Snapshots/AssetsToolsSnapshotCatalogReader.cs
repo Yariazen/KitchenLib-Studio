@@ -8,9 +8,11 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class AssetsToolsSnapshotCatalogReader : IPlateUpSnapshotCatalogReader
+    internal sealed class AssetsToolsSnapshotCatalogReader : IPlateUpSnapshotCatalogReader
     {
         private static readonly string[] Containers = { "globalgamemanagers.assets", "resources.assets", "sharedassets0.assets", "sharedassets1.assets", "level0", "level1" };
         public SnapshotCatalogScanResult Scan(string gameRoot, IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)

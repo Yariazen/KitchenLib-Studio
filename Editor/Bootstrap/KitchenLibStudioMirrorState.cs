@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     [Serializable]
-    public sealed class KitchenLibStudioMirrorState
+    internal sealed class KitchenLibStudioMirrorState
     {
         public string generatorVersion;
         public string sourceFingerprint;

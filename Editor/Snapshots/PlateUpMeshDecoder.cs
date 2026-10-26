@@ -7,9 +7,11 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class PlateUpMeshDecoder
+    internal static class PlateUpMeshDecoder
     {
         private const int MaximumVertices = 10_000_000;
         private const int MaximumIndices = 30_000_000;

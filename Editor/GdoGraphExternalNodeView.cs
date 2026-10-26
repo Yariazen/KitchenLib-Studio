@@ -4,6 +4,9 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+using KitchenLib.Studio.Editor.Snapshots;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class GdoGraphExternalNodeView : Node
@@ -14,7 +17,7 @@ namespace KitchenLib.Studio.Editor
         private readonly Func<System.Collections.Generic.IReadOnlyList<ExternalGdoRelatedEntry>> _related;
         private readonly Action<ExternalGdoCatalogEntry> _addRelated;
 
-        public GdoGraphExternalNodeView(GdoGraphNodeRecord record, Action removeMember = null,
+        internal GdoGraphExternalNodeView(GdoGraphNodeRecord record, Action removeMember = null,
             Action editReference = null, ExternalGdoCatalogRepository repository = null,
             Func<System.Collections.Generic.IReadOnlyList<ExternalGdoRelatedEntry>> related = null,
             Action<ExternalGdoCatalogEntry> addRelated = null)
@@ -70,7 +73,7 @@ namespace KitchenLib.Studio.Editor
         public int ExternalId { get; }
         public string ExpectedType { get; }
 
-        public void SetSnapshotResult(ExternalGdoSnapshotResult result)
+        internal void SetSnapshotResult(ExternalGdoSnapshotResult result)
         {
             if (result == null) throw new ArgumentNullException(nameof(result));
             if (_snapshot == null || _snapshotStatus == null) return;

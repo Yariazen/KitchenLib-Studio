@@ -5,6 +5,8 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class ExternalGdoPicker : VisualElement
@@ -23,7 +25,7 @@ namespace KitchenLib.Studio.Editor
         private readonly Label _resultCount;
         private readonly bool _showSelectionSummary;
 
-        public ExternalGdoPicker(string expectedType, ExternalGdoCatalogRepository repository,
+        internal ExternalGdoPicker(string expectedType, ExternalGdoCatalogRepository repository,
             Action<ExternalGdoCatalogEntry> selected, bool showSelectionSummary = true)
         {
             _expectedType = expectedType;
@@ -100,14 +102,14 @@ namespace KitchenLib.Studio.Editor
         }
 
         public bool ManualExpanded { get; private set; }
-        public ExternalGdoCatalogEntry SelectedEntry { get; private set; }
+        internal ExternalGdoCatalogEntry SelectedEntry { get; private set; }
         public string SelectedRuntimeType { get; private set; }
         public string SelectedProviderKey { get; private set; }
         public int ResultCount => _filtered.Count;
         public VisualElement ManualContent => _manual;
         public event Action<bool> ManualExpandedChanged;
 
-        public IReadOnlyList<ExternalGdoCatalogEntry> Search(string query) =>
+        internal IReadOnlyList<ExternalGdoCatalogEntry> Search(string query) =>
             _repository.Search(query, _expectedType, SelectedRuntimeType, SelectedProviderKey);
 
         public void SetRuntimeType(string runtimeType)
@@ -133,7 +135,7 @@ namespace KitchenLib.Studio.Editor
             RefreshResults(_query.value);
         }
 
-        public void Select(ExternalGdoCatalogEntry entry)
+        internal void Select(ExternalGdoCatalogEntry entry)
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
             if (!string.IsNullOrEmpty(_expectedType) && !GdoDescriptorCatalog.IsAssignable(entry.RuntimeType, _expectedType))
@@ -142,7 +144,7 @@ namespace KitchenLib.Studio.Editor
             _selected?.Invoke(entry);
         }
 
-        public void ShowSelection(ExternalGdoCatalogEntry entry)
+        internal void ShowSelection(ExternalGdoCatalogEntry entry)
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
             SelectedEntry = entry;

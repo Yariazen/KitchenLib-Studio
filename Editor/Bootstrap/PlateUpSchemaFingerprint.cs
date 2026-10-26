@@ -4,9 +4,9 @@ using System.Security.Cryptography;
 using System.Text;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public sealed class PlateUpSchemaFingerprint
+    internal sealed class PlateUpSchemaFingerprint
     {
         private PlateUpSchemaFingerprint(string unityVersion, string assemblyName, string assemblySha256, string schemaFingerprint)
         {

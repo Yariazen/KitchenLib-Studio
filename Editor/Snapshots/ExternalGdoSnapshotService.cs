@@ -5,11 +5,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
-{
-    public enum ExternalGdoSnapshotState { Loading, Ready, Unsupported, Unavailable, Failed }
+using KitchenLib.Studio.Editor.Catalogs.Mods;
 
-    public sealed class ExternalGdoSnapshotResult
+namespace KitchenLib.Studio.Editor.Snapshots
+{
+    internal enum ExternalGdoSnapshotState { Loading, Ready, Unsupported, Unavailable, Failed }
+
+    internal sealed class ExternalGdoSnapshotResult
     {
         public ExternalGdoSnapshotResult(ExternalGdoSnapshotState state, Texture2D texture = null,
             string diagnostic = null)
@@ -30,7 +32,7 @@ namespace KitchenLib.Studio.Editor
             ExternalGdoSnapshotState.Unsupported, diagnostic: "No snapshot for this GDO type.");
     }
 
-    public sealed class ExternalGdoSnapshotServiceDependencies
+    internal sealed class ExternalGdoSnapshotServiceDependencies
     {
         public Func<string, SnapshotCacheEntry> CacheGet { get; set; }
         public Action<string, byte[], SnapshotCacheMetadata> CachePut { get; set; }
@@ -40,7 +42,7 @@ namespace KitchenLib.Studio.Editor
         public Func<bool> CanRender { get; set; }
     }
 
-    public interface IExternalGdoSnapshotService : IDisposable
+    internal interface IExternalGdoSnapshotService : IDisposable
     {
         IDisposable Request(string providerKey, int gdoId, string runtimeType,
             Action<ExternalGdoSnapshotResult> completed);
@@ -49,7 +51,7 @@ namespace KitchenLib.Studio.Editor
     internal sealed class CompletedSnapshotSubscription : IDisposable
     { public static readonly CompletedSnapshotSubscription Instance = new CompletedSnapshotSubscription(); public void Dispose() { } }
 
-    public static class ExternalGdoSnapshotCacheIdentity
+    internal static class ExternalGdoSnapshotCacheIdentity
     {
         public const string RendererVersion = "2";
         public const string SettingsFingerprint = "studio-v1";
@@ -90,7 +92,7 @@ namespace KitchenLib.Studio.Editor
         }
     }
 
-    public sealed class ExternalGdoSnapshotService : IExternalGdoSnapshotService
+    internal sealed class ExternalGdoSnapshotService : IExternalGdoSnapshotService
     {
         private readonly VanillaAssetCatalogData _catalog;
         private readonly ExternalGdoSnapshotServiceDependencies _dependencies;

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class ImportedGdoSnapshotService : IExternalGdoSnapshotService
+    internal sealed class ImportedGdoSnapshotService : IExternalGdoSnapshotService
     {
         private readonly IExternalGdoSnapshotService _vanilla;
         private readonly ExternalGdoCatalogRepository _catalogues;

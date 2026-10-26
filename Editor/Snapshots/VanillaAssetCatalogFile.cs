@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class VanillaAssetCatalogFile
+    internal static class VanillaAssetCatalogFile
     {
         private static readonly UTF8Encoding Utf8NoBom = new UTF8Encoding(false, true);
         public static byte[] Serialize(VanillaAssetCatalogData data)

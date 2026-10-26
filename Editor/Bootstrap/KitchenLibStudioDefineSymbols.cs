@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using UnityEditor;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public static class KitchenLibStudioDefineSymbols
+    internal static class KitchenLibStudioDefineSymbols
     {
         public const string MirrorsSymbol = "KITCHENLIB_STUDIO_MIRRORS";
         public static bool MirrorsEnabled => PlayerSettings.GetScriptingDefineSymbolsForGroup(

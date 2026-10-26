@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public sealed class PlateUpInstallationDiscovery
+    internal sealed class PlateUpInstallationDiscovery
     {
         public const string AppId = "1599600";
         private readonly RuntimePlatform _platform;

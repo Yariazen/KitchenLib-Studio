@@ -5,13 +5,13 @@ using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public interface IKitchenLibStudioRegenerationStageRunner
+    internal interface IKitchenLibStudioRegenerationStageRunner
     { void Run(string stage, PlateUpInstallation installation, CancellationToken token); }
-    public interface IKitchenLibStudioRegenerationFileSystem { void Delete(string path); }
+    internal interface IKitchenLibStudioRegenerationFileSystem { void Delete(string path); }
 
-    public sealed class RegenerationResult
+    internal sealed class RegenerationResult
     {
         private RegenerationResult(bool succeeded, string failedStage, string error, IReadOnlyList<string> completed)
         { Succeeded = succeeded; FailedStage = failedStage; Error = error; CompletedStages = completed; }
@@ -22,7 +22,7 @@ namespace KitchenLib.Studio.Editor
             new RegenerationResult(false, stage, exception.Message, stages);
     }
 
-    public sealed class KitchenLibStudioRegeneration
+    internal sealed class KitchenLibStudioRegeneration
     {
         private static readonly string[] Stages = { "mirrors", "asset-refresh", "queue-catalogues" };
         private readonly string _projectRoot; private readonly IKitchenLibStudioRegenerationStageRunner _runner;

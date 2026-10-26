@@ -7,7 +7,9 @@ using AssetsTools.NET;
 using AssetsTools.NET.Extra;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
     internal sealed class LegacyWaterPlateUpPreviewDecoder : IPlateUpPreviewDecoder
     {

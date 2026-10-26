@@ -3,9 +3,11 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace KitchenLib.Studio.Editor
+using KitchenLib.Studio.Editor.Bootstrap;
+
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class PlateUpSourceFingerprint
+    internal static class PlateUpSourceFingerprint
     {
         public static void Validate(string gameRoot, VanillaAssetCatalogData catalog)
         {

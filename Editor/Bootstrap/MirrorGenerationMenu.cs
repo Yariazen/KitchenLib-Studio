@@ -4,9 +4,9 @@ using System.Threading;
 using UnityEditor;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public static class MirrorGenerationMenu
+    internal static class MirrorGenerationMenu
     {
         [MenuItem("KitchenLib Studio/Generate Mirrors")]
         public static void RegenerateMirrors()

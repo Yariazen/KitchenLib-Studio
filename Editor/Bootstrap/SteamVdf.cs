@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public sealed class SteamVdfParseException : FormatException
+    internal sealed class SteamVdfParseException : FormatException
     {
         public SteamVdfParseException(string message, int line, int column)
             : base(message + " at line " + line + ", column " + column + ".")
@@ -16,7 +16,7 @@ namespace KitchenLib.Studio.Editor
         public int Column { get; }
     }
 
-    public sealed class SteamVdfNode
+    internal sealed class SteamVdfNode
     {
         private readonly Dictionary<string, string> _values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, SteamVdfNode> _objects = new Dictionary<string, SteamVdfNode>(StringComparer.OrdinalIgnoreCase);
@@ -29,7 +29,7 @@ namespace KitchenLib.Studio.Editor
         internal void Set(string key, SteamVdfNode value) => _objects[key] = value;
     }
 
-    public static class SteamVdf
+    internal static class SteamVdf
     {
         public static SteamVdfNode Parse(string text)
         {

@@ -5,16 +5,16 @@ using System.Reflection;
 using KitchenData;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class GdoPrefabCandidate
+    internal sealed class GdoPrefabCandidate
     {
         public GdoPrefabCandidate(string fieldPath, GameObject value) { FieldPath = fieldPath; Value = value; }
         public string FieldPath { get; }
         public GameObject Value { get; }
     }
 
-    public sealed class SnapshotResolution
+    internal sealed class SnapshotResolution
     {
         private SnapshotResolution(GameObject gameObject, string fieldPath, bool requiresSelection, string diagnostic)
         { GameObject = gameObject; FieldPath = fieldPath; RequiresSelection = requiresSelection; Diagnostic = diagnostic ?? string.Empty; }
@@ -27,7 +27,7 @@ namespace KitchenLib.Studio.Editor
         internal static SnapshotResolution Failure(bool requiresSelection, string diagnostic) => new SnapshotResolution(null, null, requiresSelection, diagnostic);
     }
 
-    public sealed class CustomGdoSnapshotResolver
+    internal sealed class CustomGdoSnapshotResolver
     {
         public IReadOnlyList<GdoPrefabCandidate> Candidates(GameDataObject gdo)
         {

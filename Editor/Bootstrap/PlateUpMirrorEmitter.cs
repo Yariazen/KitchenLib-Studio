@@ -8,10 +8,10 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     /// <summary>Emits data shapes, not executable game logic. Source order is retained for Unity fields.</summary>
-    public sealed class PlateUpMirrorEmitter
+    internal sealed class PlateUpMirrorEmitter
     {
         private readonly string _templates;
         private static readonly UTF8Encoding Utf8 = new UTF8Encoding(false);

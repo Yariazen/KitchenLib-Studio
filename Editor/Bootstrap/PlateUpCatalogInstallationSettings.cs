@@ -1,10 +1,10 @@
 using System;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public interface IPlateUpCatalogPreferenceStore { string Get(); void Set(string value); void Delete(); }
+    internal interface IPlateUpCatalogPreferenceStore { string Get(); void Set(string value); void Delete(); }
 
-    public sealed class PlateUpCatalogInstallationSettings
+    internal sealed class PlateUpCatalogInstallationSettings
     {
         private readonly IPlateUpCatalogPreferenceStore _store;
         private readonly Func<string, PlateUpInstallationValidation> _validate;

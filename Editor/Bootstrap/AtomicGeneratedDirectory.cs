@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     /// <summary>Rename-based publication with a durable recovery record outside the imported asset tree.</summary>
-    public static class AtomicGeneratedDirectory
+    internal static class AtomicGeneratedDirectory
     {
         private static string Transaction => Path.Combine(KitchenLibStudioGeneratedPaths.StateDirectory, "Publication");
         private static string Backup => Path.Combine(Transaction, "Previous");

@@ -4,11 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public enum VanillaAssetKind { Gdo, GameObject, Transform, MeshFilter, Renderer, Material, Shader, Texture2D, Cubemap, Sprite, Mesh }
+    internal enum VanillaAssetKind { Gdo, GameObject, Transform, MeshFilter, Renderer, Material, Shader, Texture2D, Cubemap, Sprite, Mesh }
 
-    public static class VanillaAssetKey
+    internal static class VanillaAssetKey
     {
         public static string Generate(string provider, VanillaAssetKind kind, string displayName,
             IEnumerable<string> qualifiers, long pathId)

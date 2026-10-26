@@ -5,6 +5,8 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class GdoExternalReferenceDialog : EditorWindow
@@ -21,11 +23,11 @@ namespace KitchenLib.Studio.Editor
         public GdoBundleGraphAsset TargetGraph => _targetGraph;
         public ExternalGdoPicker Picker { get; private set; }
 
-        public static GdoExternalReferenceDialog Open(GdoBundleGraphAsset targetGraph,
+        internal static GdoExternalReferenceDialog Open(GdoBundleGraphAsset targetGraph,
             Action<GdoBundleGraphAsset, string, int, string> accepted)
             => Open(targetGraph, accepted, null, ExternalGdoCatalogRepository.Current);
 
-        public static GdoExternalReferenceDialog Open(GdoBundleGraphAsset targetGraph,
+        internal static GdoExternalReferenceDialog Open(GdoBundleGraphAsset targetGraph,
             Action<GdoBundleGraphAsset, string, int, string> accepted, string expectedType,
             ExternalGdoCatalogRepository repository, int currentId = 0, string initialType = null)
         {
@@ -78,7 +80,7 @@ namespace KitchenLib.Studio.Editor
 
         private void AcceptFromFields() => Accept(ExternalGdoCatalogRepository.VanillaProviderKey, _id.value, _type.value);
 
-        public void Accept(ExternalGdoCatalogEntry entry)
+        internal void Accept(ExternalGdoCatalogEntry entry)
         {
             if (entry == null) throw new ArgumentNullException(nameof(entry));
             Accept(entry.ProviderKey, entry.RuntimeId, string.IsNullOrEmpty(_expectedType) ? entry.RuntimeType : _expectedType);

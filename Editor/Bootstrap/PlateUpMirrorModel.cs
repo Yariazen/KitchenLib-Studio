@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using Mono.Cecil;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     /// <summary>A metadata-only closure. No installed game assembly is loaded or executed.</summary>
-    public sealed class PlateUpMirrorModel : IDisposable
+    internal sealed class PlateUpMirrorModel : IDisposable
     {
         private readonly DefaultAssemblyResolver _resolver;
         private readonly Dictionary<string, TypeDefinition> _types = new Dictionary<string, TypeDefinition>(StringComparer.Ordinal);

@@ -3,9 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class GameObjectSnapshotService
+    internal sealed class GameObjectSnapshotService
     {
         private readonly string _gameRoot;
         private readonly VanillaAssetCatalogData _catalog;

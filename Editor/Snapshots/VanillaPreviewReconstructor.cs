@@ -4,9 +4,9 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public sealed class ReconstructedPreview : IDisposable
+    internal sealed class ReconstructedPreview : IDisposable
     {
         private readonly List<UnityEngine.Object> _owned;
         internal ReconstructedPreview(GameObject root, List<UnityEngine.Object> owned) { Root = root; _owned = owned; }
@@ -19,7 +19,7 @@ namespace KitchenLib.Studio.Editor
         }
     }
 
-    public static class VanillaPreviewReconstructor
+    internal static class VanillaPreviewReconstructor
     {
         public static ReconstructedPreview Reconstruct(VanillaPreviewModel model)
         {

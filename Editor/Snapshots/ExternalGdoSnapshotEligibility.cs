@@ -1,8 +1,8 @@
 using System;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Snapshots
 {
-    public static class ExternalGdoSnapshotEligibility
+    internal static class ExternalGdoSnapshotEligibility
     {
         private static readonly string[] SupportedRoots =
         {

@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     /// <summary>Paths inside one platform's PlateUp installation, independent of Steam metadata.</summary>
-    public sealed class PlateUpPlatformLayout
+    internal sealed class PlateUpPlatformLayout
     {
         private PlateUpPlatformLayout(string gameRoot, string dataRoot, string executablePath)
         {

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
-    public enum PlateUpInstallationSource { None, Saved, Standard, Discovered, Picker }
+    internal enum PlateUpInstallationSource { None, Saved, Standard, Discovered, Picker }
 
-    public sealed class PlateUpInstallationResolution
+    internal sealed class PlateUpInstallationResolution
     {
         public PlateUpInstallationResolution(PlateUpInstallation installation, PlateUpInstallationSource source,
             IEnumerable<string> diagnostics)
@@ -15,7 +15,7 @@ namespace KitchenLib.Studio.Editor
         public IReadOnlyList<string> Diagnostics { get; }
     }
 
-    public sealed class PlateUpInstallationResolver
+    internal sealed class PlateUpInstallationResolver
     {
         private readonly IPlateUpCatalogPreferenceStore _store;
         private readonly Func<string, PlateUpInstallationValidation> _validate;

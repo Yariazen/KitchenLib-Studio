@@ -7,6 +7,11 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
 
+using KitchenLib.Studio.Editor.Bootstrap;
+using KitchenLib.Studio.Editor.Catalogs.Mods;
+using KitchenLib.Studio.Editor.Catalogs.Vanilla;
+using KitchenLib.Studio.Editor.Snapshots;
+
 namespace KitchenLib.Studio.Editor
 {
     public sealed class GdoBundleGraphView : GraphView
@@ -34,7 +39,7 @@ namespace KitchenLib.Studio.Editor
         private readonly Action _collectOverlays;
         private readonly ExternalGdoCatalogRepository _externalRepository;
 
-        public GdoBundleGraphView(Action graphChanged = null, Action<string> renameGdo = null,
+        internal GdoBundleGraphView(Action graphChanged = null, Action<string> renameGdo = null,
             Func<string, bool> confirmMemberRemoval = null,
             Func<IExternalGdoSnapshotService> snapshotServiceFactory = null,
             Func<GraphElement, bool> snapshotVisibility = null,

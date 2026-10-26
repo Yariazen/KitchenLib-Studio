@@ -5,6 +5,8 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
+using KitchenLib.Studio.Editor.Bootstrap;
+
 namespace KitchenLib.Studio.Editor
 {
     // Find can migrate and save legacy YAML, so Undo alone cannot restore companion data.

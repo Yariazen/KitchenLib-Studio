@@ -1,4 +1,4 @@
-namespace KitchenLib.Studio.Editor
+namespace KitchenLib.Studio.Editor.Bootstrap
 {
     internal static class KitchenLibStudioAttribution
     {
