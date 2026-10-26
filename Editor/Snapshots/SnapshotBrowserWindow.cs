@@ -26,7 +26,7 @@ namespace KitchenLib.Studio.Editor
         public static void ShowWindow() => GetWindow<SnapshotBrowserWindow>("Snapshot Browser");
         private void OnEnable()
         {
-            rootVisualElement.Clear(); VisualElement content = BuildContentForTests(); rootVisualElement.Add(content);
+            rootVisualElement.Clear(); VisualElement content = BuildContent(); rootVisualElement.Add(content);
             TryLoadVanilla(content);
             ObjectField gdo = content.Q<ObjectField>("snapshot-custom-gdo");
             gdo.RegisterValueChangedCallback(_ => RefreshCandidates(content));
@@ -153,7 +153,7 @@ namespace KitchenLib.Studio.Editor
         private static void SetDiagnostic(VisualElement content, string message, HelpBoxMessageType type)
         { HelpBox box = content.Q<HelpBox>("snapshot-diagnostics"); box.text = message; box.messageType = type; }
 
-        public static VisualElement BuildContentForTests()
+        private static VisualElement BuildContent()
         {
             var root = new VisualElement { name = "snapshot-browser" };
             root.Add(new Label("GAMEOBJECT SNAPSHOTS"));

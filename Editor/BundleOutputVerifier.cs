@@ -9,23 +9,6 @@ namespace KitchenLib.Studio.Editor
 {
     public sealed class ExpectedGdo
     {
-        public static readonly ExpectedGdo ScalarProof = new ExpectedGdo(
-            "KitchenData.GameDifficultySettings",
-            "Kitchen.GameData",
-            "KLStudio Scalar Proof",
-            -1950922447,
-            false);
-
-        public static readonly ExpectedGdo DishLinkProof = new ExpectedGdo(
-            "KitchenData.Dish",
-            "Kitchen.GameData",
-            "KLStudio Link Proof Dish",
-            -1950922446,
-            false,
-            true);
-        public static readonly ExpectedGdo FullDishProof = new ExpectedGdo(
-            "KitchenData.Dish", "Kitchen.GameData", "KLStudio Full Dish Proof", -1950922445, false, true);
-
         public ExpectedGdo(string typeFullName, string assemblyName, string assetName, int id, bool isActive, bool requiresLinkManifest = false)
         {
             TypeFullName = typeFullName;
@@ -149,7 +132,7 @@ namespace KitchenLib.Studio.Editor
                 var difficulty = actual as GameDifficultySettings;
                 if (difficulty != null && difficulty.IsActive != item.IsActive)
                 {
-                    issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "IsActive", "Bundle GDO active state does not match the expected fixture."));
+                    issues.Add(new ValidationIssue(ValidationSeverity.Error, actual.name, "IsActive", "Bundle GDO active state does not match the authored value."));
                 }
                 }
             }

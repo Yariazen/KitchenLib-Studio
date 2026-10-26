@@ -98,13 +98,6 @@ namespace KitchenLib.Studio.Editor
             return new GdoOverlaySerializedGraph { _rootNodeId = root, _nodes = nodes.OrderBy(node => node.Id).ToList() };
         }
 
-        public static GdoOverlaySerializedGraph CreateForTesting(int rootNodeId, IEnumerable<GdoOverlaySerializedNode> nodes) =>
-            new GdoOverlaySerializedGraph
-            {
-                _rootNodeId = rootNodeId,
-                _nodes = (nodes ?? throw new ArgumentNullException(nameof(nodes))).ToList()
-            };
-
         public bool TryDecode(out GdoOverlayValue value, out IReadOnlyList<GdoOverlayPersistenceDiagnostic> diagnostics)
         {
             var issues = new List<GdoOverlayPersistenceDiagnostic>();

@@ -12,6 +12,8 @@ https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git#v0.1.0
 
 This is an intentional placeholder, not an installable repository. Replace it with the published repository URL. During migration, the original-code license is also a release-blocking placeholder; see `LICENSE.md`.
 
+The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license and `classdata.tpk` redistribution provenance are resolved.
+
 ## Generated data and source control
 
 The consuming project's `Assets/KitchenLibStudio.Generated/` directory is owned by the generator and may be replaced completely. Add these rules to the consuming project's `.gitignore` (the package's ignore file does not configure your project):
