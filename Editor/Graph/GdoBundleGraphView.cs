@@ -637,8 +637,7 @@ namespace KitchenLib.Studio.Editor.Graph
         {
             bool connected = _graph.HasConnections(nodeId);
             if (connected && !_confirmMemberRemoval(nodeId)) return;
-            GdoBundleGraphRepository.RemoveCustomNode(_graph, nodeId, connected);
-            GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+            _connectionController.RemoveCustomNode(nodeId, connected);
             Load(_graph);
             _graphChanged?.Invoke();
         }

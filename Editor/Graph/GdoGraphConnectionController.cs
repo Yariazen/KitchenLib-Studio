@@ -69,7 +69,9 @@ namespace KitchenLib.Studio.Editor.Graph
                 int customGroup = Begin("Connect custom graph node");
                 GdoGraphEdgeRecord customEdge = GdoBundleGraphRepository.AddEdge(_graph,
                     outputElementId, outputPortPath, inputElementId, inputPath, order);
-                ApplyOrRevert(customGroup);
+                // Structurally valid edges may leave a multi-input node incomplete while wiring.
+                // Keep the authored edge; failed projection preserves companions and blocks builds.
+                GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
                 Undo.CollapseUndoOperations(customGroup);
                 return customEdge;
             }
@@ -143,6 +145,18 @@ namespace KitchenLib.Studio.Editor.Graph
                 // Removal is a recovery operation: other broken/invalid members must not prevent progress.
                 // TryApply restores companions on failure; the diagnostics keep building blocked until
                 // the remaining invalid data is repaired or removed. The final removal reapplies projection.
+                GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+                Undo.CollapseUndoOperations(group);
+            }
+            catch { Undo.RevertAllDownToGroup(group); throw; }
+        }
+
+        internal void RemoveCustomNode(string nodeId, bool removeConnectedEdges)
+        {
+            int group = Begin("Remove custom graph node");
+            try
+            {
+                GdoBundleGraphRepository.RemoveCustomNode(_graph, nodeId, removeConnectedEdges);
                 GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
                 Undo.CollapseUndoOperations(group);
             }
