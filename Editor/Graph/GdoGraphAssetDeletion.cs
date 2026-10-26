@@ -27,16 +27,19 @@ namespace KitchenLib.Studio.Editor.Graph
             RequireOwned(assetPath, GdoBundleProjectRepository.GdoFolder(graph), "GDO asset");
             string companionPath = GdoOverlayAuthoringRepository.ExistingPath(node.Asset);
             RequireOwned(companionPath, GdoBundleProjectRepository.ProjectFolder(graph) + "/Editor/Overlays", "GDO companion");
+            bool hasCompanion = AssetDatabase.LoadMainAssetAtPath(companionPath) != null;
 
             string graphPath = AssetDatabase.GetAssetPath(graph);
             bool dirty = EditorUtility.IsDirty(graph);
             AssetDatabase.SaveAssetIfDirty(graph);
-            var snapshots = new[] { Snapshot.Capture(graphPath), Snapshot.Capture(assetPath), Snapshot.Capture(companionPath) };
+            var snapshots = new List<Snapshot> { Snapshot.Capture(graphPath), Snapshot.Capture(assetPath) };
+            if (hasCompanion) snapshots.Add(Snapshot.Capture(companionPath));
             string graphJson = EditorJsonUtility.ToJson(graph);
             try
             {
                 GdoBundleGraphRepository.RemoveMember(graph, nodeId, true);
-                if (!deleteAsset(companionPath)) throw new InvalidOperationException("Could not delete GDO companion: " + companionPath);
+                if (hasCompanion && !deleteAsset(companionPath))
+                    throw new InvalidOperationException("Could not delete GDO companion: " + companionPath);
                 if (!deleteAsset(assetPath)) throw new InvalidOperationException("Could not delete GDO asset: " + assetPath);
                 AssetDatabase.SaveAssetIfDirty(graph);
                 Undo.ClearUndo(graph);
