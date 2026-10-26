@@ -10,6 +10,8 @@ using UnityEngine;
 using KitchenLib.Studio.Editor.Bootstrap;
 using KitchenLib.Studio.Editor.Catalogs.Vanilla;
 
+using KitchenLib.Studio.Editor.Authoring;
+
 namespace KitchenLib.Studio.Editor.Infrastructure
 {
     internal sealed class AssetsToolsPlateUpAssetReader : IPlateUpAssetReader

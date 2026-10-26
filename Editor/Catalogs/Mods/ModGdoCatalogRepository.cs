@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using KitchenLib.Studio.Editor.Authoring;
+
 namespace KitchenLib.Studio.Editor.Catalogs.Mods
 {
     internal enum ModGdoCatalogState { Missing, Ready, Malformed, IncompatibleSchema, StaleCapture, StaleBuild, DuplicateRuntimeId }

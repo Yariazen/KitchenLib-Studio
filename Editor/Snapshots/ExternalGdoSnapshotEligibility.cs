@@ -1,5 +1,7 @@
 using System;
 
+using KitchenLib.Studio.Editor.Authoring;
+
 namespace KitchenLib.Studio.Editor.Snapshots
 {
     internal static class ExternalGdoSnapshotEligibility
