@@ -236,6 +236,12 @@ namespace KitchenLib.Studio.Editor.Bootstrap
             return candidates;
         }
 
+        public static string StandardGameRoot(RuntimePlatform platform, string programFilesX86)
+        {
+            if (!PlateUpPlatformLayout.IsWindows(platform) || string.IsNullOrWhiteSpace(programFilesX86)) return null;
+            return Path.Combine(programFilesX86, "Steam", "steamapps", "common", "PlateUp");
+        }
+
         private static bool IsReadError(Exception exception) => exception is IOException || exception is UnauthorizedAccessException || exception is SteamVdfParseException;
         private static bool IsPathError(Exception exception) => exception is ArgumentException || exception is NotSupportedException;
 
