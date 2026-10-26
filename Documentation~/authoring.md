@@ -28,4 +28,4 @@ A successful rename clears the Unity editor's entire Undo/Redo history, as state
 8. Assign the Dough Ball prefab and any other intrinsic Item/ItemGroup fields on the expanded GDO node.
 9. Save, resolve validation issues, and choose **Build**. The bundle contains the ItemGroup and a data-only overlay holding both external IDs; the runtime linker resolves those references in the game.
 
-`DoughBallBundleProjectTests` runs this relationship workflow through save/import/reload and opens the built bundle. Its literal Flour `10001` and Water `10002` are stable test fixtures, **not vanilla game IDs**. Studio needs no PlateUp assemblies in the Unity authoring project.
+Use the actual Flour and Water runtime IDs from your target game version. Studio needs no PlateUp assemblies copied into the Unity authoring project.

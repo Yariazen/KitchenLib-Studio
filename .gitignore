@@ -34,3 +34,7 @@ Thumbs.db
 # Managed execution workspace
 .superpowers/
 .worktrees/
+
+# Disposable generated assets in a consuming project
+/Assets/KitchenLibStudio.Generated/
+/Assets/KitchenLibStudio.Generated.meta
