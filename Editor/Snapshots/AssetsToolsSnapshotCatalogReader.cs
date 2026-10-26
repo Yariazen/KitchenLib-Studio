@@ -20,7 +20,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(gameRoot);
             string dataRoot = layout.DataRoot;
             string classData = KitchenLibStudioGeneratedPaths.PackageFilePath(
-                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
+                "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk");
             var drafts = new List<RecordDraft>(); var edges = new List<EdgeDraft>(); var diagnostics = new List<VanillaAssetDiagnosticData>();
             var sources = new List<VanillaAssetSourceData>();
             var manager = new AssetsManager();

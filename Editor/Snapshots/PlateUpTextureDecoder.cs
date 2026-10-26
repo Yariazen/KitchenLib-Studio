@@ -14,7 +14,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             CancellationToken cancellationToken)
         {
             string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
-                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
+                "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk");
             return DecodeInstalled(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath);
         }
 

@@ -31,8 +31,9 @@ $requiredFiles = @(
     'Documentation~/index.md',
     'Editor/KitchenLib.Studio.Editor.asmdef',
     'Editor/Bootstrap/KitchenLib.Studio.Bootstrap.asmdef',
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-AssetsTools.NET.txt',
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-Mono.Cecil.txt'
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE.txt',
+    'Editor/ThirdParty/Mono.Cecil/LICENSE.txt',
+    'Editor/ThirdParty/AssetRipper.TypeTreeData/NOTICE.md'
 )
 $requiredFiles | ForEach-Object { Require-File $_ }
 
@@ -120,8 +121,8 @@ catch {
 $allowedBinaries = @(
     'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.dll',
     'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.MonoCecil.dll',
-    'Editor/ThirdParty/AssetsTools.NET/Mono.Cecil.dll',
-    'Editor/ThirdParty/AssetsTools.NET/Mono.Cecil.Rocks.dll'
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.dll',
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.Rocks.dll'
 )
 $actualBinaries = @($relativeFiles | Where-Object { [System.IO.Path]::GetExtension($_) -match '(?i)^\.(dll|exe|so|dylib)$' })
 foreach ($binary in $actualBinaries) {
@@ -134,9 +135,9 @@ foreach ($binary in $allowedBinaries) {
 $expectedHashes = [ordered]@{
     'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.dll' = '6B03D589163623B67620FBBC6F425DCB47F856584BD3AB1A34C896B2666372E4'
     'Editor/ThirdParty/AssetsTools.NET/AssetsTools.NET.MonoCecil.dll' = 'D9358259FACAF85356ED3BDEC5AEBFD9C026ECA05EF28E6413B85935770ACE67'
-    'Editor/ThirdParty/AssetsTools.NET/Mono.Cecil.dll' = '831DCA77470D85CB6FFBEA3072DAA7A3DF5B7C9FCFD9C3F43674A9BE99D4BFCF'
-    'Editor/ThirdParty/AssetsTools.NET/Mono.Cecil.Rocks.dll' = 'BF992F3DCE364EBCC3200FA7832EF07E20B4E2DBC3A8A6213CE44E3D239DB984'
-    'Editor/ThirdParty/AssetsTools.NET/classdata.tpk' = '3FAB18495D13E559E0FB9926575AFBD682A7AE780FE1569E351A6123E0059150'
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.dll' = '831DCA77470D85CB6FFBEA3072DAA7A3DF5B7C9FCFD9C3F43674A9BE99D4BFCF'
+    'Editor/ThirdParty/Mono.Cecil/Mono.Cecil.Rocks.dll' = 'BF992F3DCE364EBCC3200FA7832EF07E20B4E2DBC3A8A6213CE44E3D239DB984'
+    'Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk' = '3FAB18495D13E559E0FB9926575AFBD682A7AE780FE1569E351A6123E0059150'
 }
 foreach ($entry in $expectedHashes.GetEnumerator()) {
     $path = Join-Path $packageRoot $entry.Key
@@ -155,8 +156,8 @@ foreach ($file in $relativeFiles | Where-Object { [IO.Path]::GetExtension($_) -i
 # The upstream license texts are audited separately from the five byte-exact binary/data payloads.
 # Decode strictly as UTF-8 and normalize CRLF/CR to LF so Git's checkout line endings do not change the audit.
 $expectedLicenseHashes = [ordered]@{
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-AssetsTools.NET.txt' = '4BB83110E088086BCE348F63B34E4BFBE1FAEF121F458C16810105A3113ECA8B'
-    'Editor/ThirdParty/AssetsTools.NET/LICENSE-Mono.Cecil.txt' = '13D58ECBED676511C0C4C4009BFF107025E50007FF5E7901DC562700EC62509E'
+    'Editor/ThirdParty/AssetsTools.NET/LICENSE.txt' = '4BB83110E088086BCE348F63B34E4BFBE1FAEF121F458C16810105A3113ECA8B'
+    'Editor/ThirdParty/Mono.Cecil/LICENSE.txt' = '13D58ECBED676511C0C4C4009BFF107025E50007FF5E7901DC562700EC62509E'
 }
 $strictUtf8 = [Text.UTF8Encoding]::new($false, $true)
 foreach ($entry in $expectedLicenseHashes.GetEnumerator()) {
@@ -178,9 +179,14 @@ foreach ($entry in $expectedLicenseHashes.GetEnumerator()) {
 # Every distributable file in the third-party tree must be accounted for. The five
 # byte-exact payloads are distinct from the two audited license texts, README,
 # and Unity metadata that support those payloads.
-$thirdPartyReadme = 'Editor/ThirdParty/AssetsTools.NET/README.md'
-$approvedThirdPartyContent = @($expectedHashes.Keys) + @($expectedLicenseHashes.Keys) + @($thirdPartyReadme)
-$approvedThirdPartyFiles = @($approvedThirdPartyContent) + @($approvedThirdPartyContent | ForEach-Object { "$_.meta" }) + @('Editor/ThirdParty.meta', 'Editor/ThirdParty/AssetsTools.NET.meta')
+$thirdPartyDocs = @('Editor/ThirdParty/AssetRipper.TypeTreeData/README.md', 'Editor/ThirdParty/AssetRipper.TypeTreeData/NOTICE.md')
+$approvedThirdPartyContent = @($expectedHashes.Keys) + @($expectedLicenseHashes.Keys) + $thirdPartyDocs
+$approvedThirdPartyFiles = @($approvedThirdPartyContent) + @($approvedThirdPartyContent | ForEach-Object { "$_.meta" }) + @(
+    'Editor/ThirdParty.meta',
+    'Editor/ThirdParty/AssetsTools.NET.meta',
+    'Editor/ThirdParty/Mono.Cecil.meta',
+    'Editor/ThirdParty/AssetRipper.TypeTreeData.meta'
+)
 $actualThirdPartyFiles = @($relativeFiles | Where-Object {
     $_.StartsWith('Editor/ThirdParty/', [StringComparison]::Ordinal) -or
     $_ -ceq 'Editor/ThirdParty.meta'
@@ -432,6 +438,22 @@ foreach ($provenance in @(
 }
 if ($notices -notmatch '(?i)TypeTreeDumps[\s\S]*no declared repository license[\s\S]*Exact source provenance and contributor acknowledgment are preserved') {
     Add-Failure 'classdata.tpk notice must acknowledge TypeTreeDumps and preserve its exact source provenance.'
+}
+
+$typeTreeNoticePath = Join-Path $packageRoot 'Editor/ThirdParty/AssetRipper.TypeTreeData/NOTICE.md'
+$typeTreeNotice = if (Test-Path -LiteralPath $typeTreeNoticePath) { Get-Content -LiteralPath $typeTreeNoticePath -Raw } else { '' }
+foreach ($provenance in @(
+    '94549d10ee0fbb90392e45e555861031ff560359',
+    '39096267408',
+    '12124827219',
+    '20ba06e00e0625de0e49a502c6868d6cc86d0f0b')) {
+    if (-not $typeTreeNotice.Contains($provenance)) { Add-Failure "AssetRipper notice provenance is incomplete: $provenance" }
+}
+foreach ($statement in @(
+    'AssetRipper/TypeTreeDumps has no declared repository license.',
+    'No license is claimed or granted here for `classdata.tpk` or',
+    'AssetRipper/TypeTreeDumps contributors whose community-maintained tooling and')) {
+    if (-not $typeTreeNotice.Contains($statement)) { Add-Failure "AssetRipper notice is incomplete: $statement" }
 }
 
 if ($failures.Count -gt 0) {

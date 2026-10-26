@@ -18,7 +18,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
         private readonly string _classDataPath;
 
         public AssetsToolsPlateUpPreviewDecoder() : this(KitchenLibStudioGeneratedPaths.PackageFilePath(
-            "Editor/ThirdParty/AssetsTools.NET/classdata.tpk")) { }
+            "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk")) { }
 
         public AssetsToolsPlateUpPreviewDecoder(string classDataPath)
         {

@@ -20,7 +20,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             CancellationToken cancellationToken)
         {
             string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
-                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
+                "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk");
             return DecodeInstalled(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath);
         }
 
@@ -298,7 +298,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             CancellationToken cancellationToken, Func<AssetTypeValueField, T> decode)
         {
             string classDataPath = KitchenLibStudioGeneratedPaths.PackageFilePath(
-                "Editor/ThirdParty/AssetsTools.NET/classdata.tpk");
+                "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk");
             return WithField(gameRoot, relativeAssetPath, pathId, cancellationToken, classDataPath, decode);
         }
 

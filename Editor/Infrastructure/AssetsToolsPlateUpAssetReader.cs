@@ -19,7 +19,7 @@ namespace KitchenLib.Studio.Editor.Infrastructure
         private readonly IPlateUpAssetReaderBackend _backend;
 
         public AssetsToolsPlateUpAssetReader() : this(new AssetsToolsPlateUpAssetReaderBackend(
-            KitchenLibStudioGeneratedPaths.PackageFilePath("Editor/ThirdParty/AssetsTools.NET/classdata.tpk"))) { }
+            KitchenLibStudioGeneratedPaths.PackageFilePath("Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk"))) { }
 
         public AssetsToolsPlateUpAssetReader(IPlateUpAssetReaderBackend backend)
         {
