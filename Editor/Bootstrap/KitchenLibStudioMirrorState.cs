@@ -54,6 +54,20 @@ namespace KitchenLib.Studio.Editor
                 && outputFiles.Any(path => path.StartsWith("Sirenix/", StringComparison.Ordinal) && path.EndsWith(".cs", StringComparison.Ordinal));
         }
 
+        public bool IsCurrent(PlateUpInstallation installation)
+        {
+            if (installation == null || !HasCompleteOutput()
+                || !string.Equals(generatorVersion, PlateUpMirrorGenerator.Version, StringComparison.Ordinal)) return false;
+            try
+            {
+                using (PlateUpMirrorModel model = PlateUpMirrorModel.Read(
+                    Path.Combine(installation.ManagedDirectory, "Kitchen.GameData.dll"), installation.ManagedDirectory))
+                    return string.Equals(sourceFingerprint, model.SourceFingerprint, StringComparison.Ordinal);
+            }
+            // Steam may be replacing files while the editor checks. Inspection failure must keep the gate closed.
+            catch (Exception) { return false; }
+        }
+
         private static bool IsPublishedFile(string relative)
         {
             if (string.IsNullOrWhiteSpace(relative) || relative.Contains("\\") || relative.Contains(":")

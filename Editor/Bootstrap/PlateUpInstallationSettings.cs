@@ -14,6 +14,13 @@ namespace KitchenLib.Studio.Editor
 
         public static string SavedRoot => Settings.SavedRoot;
 
+        // Publication commits the explicit installation used by batch/API callers, too.
+        internal static void SetSelectedRoot(string root)
+        {
+            if (string.IsNullOrEmpty(root)) Preferences.Delete();
+            else Preferences.Set(root);
+        }
+
         [MenuItem("KitchenLib Studio/Catalogues/Change PlateUp Installation…")]
         public static void ChangeInstallation()
         {

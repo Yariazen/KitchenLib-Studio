@@ -18,7 +18,8 @@ namespace KitchenLib.Studio.Editor
 
     public sealed class PlateUpMirrorGenerator
     {
-        public const string Version = "1";
+        // Bump the format revision when generation changes. A package release also changes this identity.
+        public static string Version => "2/" + (PackageInfo.FindForAssembly(typeof(PlateUpMirrorGenerator).Assembly)?.version ?? "development");
         private readonly CancellationToken _cancellation;
         private readonly string _templates;
         public PlateUpMirrorGenerator(CancellationToken cancellation = default, string templatesDirectory = null)

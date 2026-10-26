@@ -33,10 +33,21 @@ namespace KitchenLib.Studio.Editor
         private static string GenerateMirrors(PlateUpInstallation installation, CancellationToken cancellation, Func<bool> cancelBeforePublication)
         {
             AtomicGeneratedDirectory.RecoverInterruptedPublication();
+            cancellation.ThrowIfCancellationRequested();
             string staging = Path.Combine(KitchenLibStudioGeneratedPaths.StateDirectory, "Staging", Guid.NewGuid().ToString("N"));
             bool wasEnabled = KitchenLibStudioDefineSymbols.MirrorsEnabled;
+            string previousSelection = PlateUpInstallationSettings.SavedRoot;
+            bool selectionChanged = false;
             try
             {
+                if (KitchenLibStudioMirrorState.Read()?.IsCurrent(installation) == true)
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    PlateUpInstallationSettings.SetSelectedRoot(installation.GameRoot);
+                    selectionChanged = true;
+                    KitchenLibStudioBootstrap.CompletePublication();
+                    return "PlateUp mirrors are already current for the selected local installation.";
+                }
                 PlateUpMirrorGenerationResult result = new PlateUpMirrorGenerator(cancellation).Generate(installation, staging);
                 cancellation.ThrowIfCancellationRequested();
                 if (cancelBeforePublication?.Invoke() == true) throw new OperationCanceledException();
@@ -45,18 +56,31 @@ namespace KitchenLib.Studio.Editor
                 try
                 {
                     AtomicGeneratedDirectory.Publish(staging, KitchenLibStudioGeneratedPaths.AssetDirectory, () => {
+                        PlateUpInstallationSettings.SetSelectedRoot(installation.GameRoot);
+                        selectionChanged = true;
                         KitchenLibStudioMirrorState.WriteAtomically(result.ToState());
                         KitchenLibStudioBootstrap.CompletePublication();
                     }, cancellation);
                 }
                 catch
                 {
+                    PlateUpInstallationSettings.SetSelectedRoot(previousSelection);
+                    selectionChanged = false;
                     KitchenLibStudioDefineSymbols.SetMirrorsEnabled(wasEnabled);
                     AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                     throw;
                 }
                 finally { AssetDatabase.AllowAutoRefresh(); EditorApplication.UnlockReloadAssemblies(); }
                 return "Generated " + result.TypeCount + " PlateUp mirror types from the selected local installation.";
+            }
+            catch
+            {
+                if (selectionChanged)
+                {
+                    PlateUpInstallationSettings.SetSelectedRoot(previousSelection);
+                    KitchenLibStudioDefineSymbols.SetMirrorsEnabled(wasEnabled);
+                }
+                throw;
             }
             finally { if (Directory.Exists(staging)) Directory.Delete(staging, true); }
         }

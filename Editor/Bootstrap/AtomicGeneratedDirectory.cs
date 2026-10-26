@@ -13,7 +13,7 @@ namespace KitchenLib.Studio.Editor
         private static string Pending => Path.Combine(Transaction, "pending");
         private static string PreviousState => Path.Combine(Transaction, "mirror-state.json");
 
-        public static void Publish(string stagingRoot, string finalAssetRoot) => Publish(stagingRoot, finalAssetRoot, () => { }, CancellationToken.None);
+        internal static void Publish(string stagingRoot, string finalAssetRoot) => Publish(stagingRoot, finalAssetRoot, () => { }, CancellationToken.None);
 
         internal static void Publish(string stagingRoot, string finalAssetRoot, Action commit, CancellationToken cancellation)
         {

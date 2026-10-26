@@ -8,6 +8,7 @@ namespace KitchenLib.Studio.Editor
     public static class KitchenLibStudioBootstrap
     {
         private static double _nextValidation;
+        private static bool _reconciling;
 
         static KitchenLibStudioBootstrap()
         {
@@ -24,32 +25,50 @@ namespace KitchenLib.Studio.Editor
         private static void CheckOutput()
         {
             if (EditorApplication.timeSinceStartup < _nextValidation) return;
-            _nextValidation = EditorApplication.timeSinceStartup + 1;
-            InvalidateMissingOutput();
+            _nextValidation = EditorApplication.timeSinceStartup + 5;
+            Reconcile();
         }
 
         public static void InvalidateMissingOutput()
         {
-            if (KitchenLibStudioMirrorState.Read()?.HasCompleteOutput() != true)
+            KitchenLibStudioMirrorState state = KitchenLibStudioMirrorState.Read();
+            if (state?.HasCompleteOutput() != true || state.generatorVersion != PlateUpMirrorGenerator.Version)
                 KitchenLibStudioDefineSymbols.SetMirrorsEnabled(false);
         }
 
         public static void Reconcile()
         {
-            bool complete = KitchenLibStudioMirrorState.Read()?.HasCompleteOutput() == true;
-            if (complete)
+            if (_reconciling) return;
+            _reconciling = true;
+            try
             {
-                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                complete = KitchenLibStudioMirrorState.Read()?.HasCompleteOutput() == true;
+                bool wasEnabled = KitchenLibStudioDefineSymbols.MirrorsEnabled;
+                bool current = HasCurrentOutput();
+                if (current && !wasEnabled)
+                {
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                    current = HasCurrentOutput();
+                }
+                KitchenLibStudioDefineSymbols.SetMirrorsEnabled(current);
+                if (current)
+                {
+                    SessionState.SetBool("KitchenLibStudio.SetupShown", false);
+                    if (!wasEnabled) EditorUtility.RequestScriptReload();
+                }
+                else if (!Application.isBatchMode && !SessionState.GetBool("KitchenLibStudio.SetupShown", false))
+                {
+                    SessionState.SetBool("KitchenLibStudio.SetupShown", true);
+                    KitchenLibStudioSetupWindow.ShowWindow();
+                }
             }
-            bool wasEnabled = KitchenLibStudioDefineSymbols.MirrorsEnabled;
-            KitchenLibStudioDefineSymbols.SetMirrorsEnabled(complete);
-            if (complete && !wasEnabled) EditorUtility.RequestScriptReload();
-            if (!complete && !Application.isBatchMode && !SessionState.GetBool("KitchenLibStudio.SetupShown", false))
-            {
-                SessionState.SetBool("KitchenLibStudio.SetupShown", true);
-                KitchenLibStudioSetupWindow.ShowWindow();
-            }
+            finally { _reconciling = false; }
+        }
+
+        private static bool HasCurrentOutput()
+        {
+            KitchenLibStudioMirrorState state = KitchenLibStudioMirrorState.Read();
+            return state?.HasCompleteOutput() == true && state.generatorVersion == PlateUpMirrorGenerator.Version
+                && state.IsCurrent(PlateUpInstallationSettings.ResolveInstallation(false));
         }
 
         // Call after all generated files and their complete state record have been published.
@@ -60,7 +79,10 @@ namespace KitchenLib.Studio.Editor
                 KitchenLibStudioDefineSymbols.SetMirrorsEnabled(false);
                 throw new InvalidDataException("Mirror publication is incomplete. Publish every generated file and its completion record before enabling authoring.");
             }
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             Reconcile();
+            if (!KitchenLibStudioDefineSymbols.MirrorsEnabled)
+                throw new InvalidDataException("The selected installation changed during mirror publication. Generate mirrors again when the installation is ready.");
         }
     }
 
