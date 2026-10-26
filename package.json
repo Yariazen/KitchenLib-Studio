@@ -1,6 +1,6 @@
 {
   "name": "com.kitchenlib.studio",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "displayName": "KitchenLib Studio",
   "description": "Editor tooling for authoring PlateUp game data and building mod AssetBundles.",
   "unity": "2020.3",

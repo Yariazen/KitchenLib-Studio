@@ -114,6 +114,7 @@ namespace KitchenLib.Studio.Editor
         private void OnGUI()
         {
             EditorGUILayout.HelpBox("Select your PlateUp installation, then generate the local mirrors to enable authoring. Generated files can be deleted and rebuilt.", MessageType.Info);
+            EditorGUILayout.HelpBox(KitchenLibStudioAttribution.TypeTreeNotice, MessageType.Info);
             EditorGUILayout.LabelField("PlateUp installation", PlateUpInstallationSettings.SavedRoot ?? "Not selected");
             if (GUILayout.Button("Select PlateUp Installation…")) PlateUpInstallationSettings.ChangeInstallation();
             if (GUILayout.Button("Generate Mirrors")) MirrorGenerationMenu.RegenerateMirrors();

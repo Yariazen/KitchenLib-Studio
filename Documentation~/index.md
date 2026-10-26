@@ -1,18 +1,18 @@
 # KitchenLib Studio
 
-KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and building mod AssetBundles. Package identity: `com.kitchenlib.studio`, version `0.1.0`; use Unity 2020.3.
+KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and building mod AssetBundles. Package identity: `com.kitchenlib.studio`, version `0.1.0-alpha.1`; use Unity 2020.3.
 
 ## Installation
 
-After the release is published, open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the final repository URL pinned to `v0.1.0`:
+After a public release is published, open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the final repository URL pinned to its release tag:
 
 ```text
-https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git#v0.1.0
+https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git#v0.1.0-alpha.1
 ```
 
-This is an intentional placeholder, not an installable repository. Replace it with the published repository URL. During migration, the original-code license is also a release-blocking placeholder; see `LICENSE.md`.
+This is an intentional placeholder, not an installable repository. Version `0.1.0-alpha.1` is owner-only and is installed from a local checkout. Before public distribution, replace the URL and original-code license and resolve redistribution permission for the TypeTreeDumps-derived `classdata.tpk`; see `LICENSE.md` and `Third Party Notices.md`.
 
-The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license and `classdata.tpk` redistribution provenance are resolved.
+The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license and `classdata.tpk` redistribution permission are resolved.
 
 Repository verification creates its Unity project outside the checkout and discards it after import. Run a local clean import with:
 

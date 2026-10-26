@@ -10,10 +10,11 @@ be included in player builds or generated AssetBundles.
 - `Mono.Cecil.dll`: NuGet `Mono.Cecil` 0.11.6, .NET Standard 2.0, MIT.
 - `Mono.Cecil.Rocks.dll`: the matching Mono.Cecil 0.11.6 extension assembly
   required transitively by the MonoCecil adapter, .NET Standard 2.0, MIT.
-- `classdata.tpk`: current `lz4.tpk` from the official `AssetRipper/Tpk`
-  `type_tree_tpk` workflow's `lz4_file` artifact. It supplies built-in Unity
-  player type trees for stripped serialized files; PlateUp's Unity 2020.3
-  files have type trees disabled.
+- `classdata.tpk`: pinned `lz4.tpk` from the official `AssetRipper/Tpk`
+  `type_tree_tpk` workflow run `39096267408`, artifact `12124827219`. Exact
+  producer and TypeTreeDumps input revisions are recorded in the repository's
+  `Third Party Notices.md`. It supplies built-in Unity player type trees for
+  stripped serialized files; PlateUp's Unity 2020.3 files have type trees disabled.
 
 Only ordinary Unity serialization fields needed for GDO identity are read.
 The importer does not execute installed assemblies or decode Odin payloads.

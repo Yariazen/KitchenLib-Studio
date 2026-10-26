@@ -89,7 +89,7 @@ foreach ($file in $allFiles) {
 try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
     if ($package.name -cne 'com.kitchenlib.studio') { Add-Failure "package.json name must be com.kitchenlib.studio." }
-    if ($package.version -cne '0.1.0') { Add-Failure "package.json version must be 0.1.0." }
+    if ($package.version -cne '0.1.0-alpha.1') { Add-Failure "package.json version must be 0.1.0-alpha.1." }
     if ($package.displayName -cne 'KitchenLib Studio') { Add-Failure "package.json displayName must be KitchenLib Studio." }
     if ($package.unity -cne '2020.3') { Add-Failure "package.json unity must be 2020.3." }
     if ($package.license -cne 'SEE LICENSE IN LICENSE.md') { Add-Failure "package.json must point to LICENSE.md." }
@@ -177,10 +177,17 @@ $notices = if (Test-Path -LiteralPath (Join-Path $packageRoot 'Third Party Notic
 foreach ($component in @('AssetsTools.NET 3.0.5', 'AssetsTools.NET.MonoCecil 3.0.4', 'Mono.Cecil 0.11.6')) {
     if ($notices -notmatch [regex]::Escape($component)) { Add-Failure "Third-party notice is incomplete: $component" }
 }
-if ($notices -notmatch '(?i)classdata\.tpk[\s\S]*redistribution terms.*unresolved') {
-    Add-Failure 'classdata.tpk provenance/license notice must explicitly identify unresolved redistribution terms.'
+foreach ($provenance in @(
+    '94549d10ee0fbb90392e45e555861031ff560359',
+    '39096267408',
+    '12124827219',
+    '20ba06e00e0625de0e49a502c6868d6cc86d0f0b')) {
+    if ($notices -notmatch [regex]::Escape($provenance)) { Add-Failure "classdata.tpk provenance is incomplete: $provenance" }
 }
-Add-Failure 'classdata.tpk redistribution license and immutable upstream revision are unresolved; public distribution is blocked.'
+if ($notices -notmatch '(?i)TypeTreeDumps[\s\S]*no declared repository license[\s\S]*redistribution permission[\s\S]*unverified') {
+    Add-Failure 'classdata.tpk notice must acknowledge TypeTreeDumps and retain the unverified redistribution permission.'
+}
+Add-Failure 'TypeTreeDumps-derived classdata.tpk redistribution permission is unverified; public distribution is blocked.'
 
 if ($failures.Count -gt 0) {
     foreach ($failure in $failures | Sort-Object -Unique) { Write-Error "FAIL: $failure" -ErrorAction Continue }
@@ -188,5 +195,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Output 'PASS: com.kitchenlib.studio@0.1.0 package and repository are production-only.'
+Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.1 package and repository are production-only.'
 exit 0
