@@ -176,9 +176,19 @@ namespace KitchenLib.Studio.Editor.Graph
             int group = Begin("Disconnect GDO graph relationship");
             GdoGraphEdgeRecord edge = _graph.FindEdge(edgeId);
             bool custom = edge != null && StudioCustomGraphPipeline.IsCustomEdge(_graph, edge.OutputNodeId, edge.InputNodeId);
+            if (custom)
+            {
+                try
+                {
+                    GdoBundleGraphRepository.RemoveEdge(_graph, edgeId);
+                    GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+                    Undo.CollapseUndoOperations(group);
+                }
+                catch { Undo.RevertAllDownToGroup(group); throw; }
+                return;
+            }
             GdoBundleGraphRepository.RemoveEdge(_graph, edgeId);
-            if (custom) GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
-            else ApplyOrRevert(group);
+            ApplyOrRevert(group);
             Undo.CollapseUndoOperations(group);
         }
 
@@ -210,11 +220,15 @@ namespace KitchenLib.Studio.Editor.Graph
         internal void SetCustomValue(string nodeId, string key, StudioAuthoringValue value)
         {
             int group = Begin("Edit custom graph field");
-            GdoBundleGraphRepository.SetCustomValue(_graph, nodeId, key, value);
-            // Incomplete edits remain authored and diagnosable. Successful projections join the
-            // field's undo transaction; failures preserve the previous companion contents.
-            GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
-            Undo.CollapseUndoOperations(group);
+            try
+            {
+                GdoBundleGraphRepository.SetCustomValue(_graph, nodeId, key, value);
+                // Incomplete edits remain authored and diagnosable. Successful projections join the
+                // field's undo transaction; failures preserve the previous companion contents.
+                GdoGraphProjectionApplier.TryApply(_graph, out _, true, true);
+                Undo.CollapseUndoOperations(group);
+            }
+            catch { Undo.RevertAllDownToGroup(group); throw; }
         }
 
         public void SetRelationshipValueAfterCollectionRemoval(string relationshipId, string collectionPath,
