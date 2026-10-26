@@ -16,7 +16,8 @@ $WorkingRoot = [System.IO.Path]::GetFullPath($WorkingRoot).TrimEnd([char[]]@('/'
 if (-not [string]::IsNullOrWhiteSpace($RetainedLogPath)) {
     $RetainedLogPath = [System.IO.Path]::GetFullPath($RetainedLogPath)
     $pathComparison = if ($IsWindows) { [System.StringComparison]::OrdinalIgnoreCase } else { [System.StringComparison]::Ordinal }
-    if ($RetainedLogPath.StartsWith($PackageRoot + [System.IO.Path]::DirectorySeparatorChar, $pathComparison)) {
+    if ([string]::Equals($RetainedLogPath, $PackageRoot, $pathComparison) -or
+        $RetainedLogPath.StartsWith($PackageRoot + [System.IO.Path]::DirectorySeparatorChar, $pathComparison)) {
         throw 'RetainedLogPath must be outside the package checkout.'
     }
 }
