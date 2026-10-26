@@ -2,6 +2,7 @@
 
 ## [0.1.0-alpha.1]
 
+- Make the graph authoritative for local GDO deletion: always confirm, then atomically remove the local graph record, relationships, connected edges, owned GDO asset, and companion while keeping external references graph-only.
 - Automatically select and remember a valid standard or uniquely discovered PlateUp Steam installation before offering manual folder selection.
 - Add root onboarding, manual zip installation guidance, and a maintainer release process for the alpha candidate. Require the README in the package gate and release archive, and check its pinned Git installation URL against package metadata.
 - Harden public-surface auditing across conditional configurations, case-sensitive qualified names and all non-template C# source locations. Scope build saves to product assets so unrelated dirty work remains unsaved, and preserve accepted scalar semantic kinds between pre-build processors.

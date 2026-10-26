@@ -8,7 +8,7 @@ New GDO companions (intrinsic values, localization and relationship projections)
 
 Every local member must remain under the project's `GDOs` folder. Moving it elsewhere produces a member-specific blocking diagnostic and stops a build before any output is created. Creating a GDO preflights calculated-ID collisions with local and known external references.
 
-Use **Remove Member** on local, external or missing nodes to remove graph membership while preserving any source asset and its companion. Connected edges and owned relationship nodes require explicit confirmation; canceling leaves the graph and projections unchanged. Removal is undoable. You can remove broken members even when other invalid members remain; remaining errors keep builds blocked, and projections refresh once those errors are resolved. Relationship nodes have their own removal action.
+Use **Delete GDO…** on a resolved local node to delete it from the graph and permanently remove its project-owned GDO asset and companion. Studio always asks for confirmation and names the GDO; confirming also removes its relationships and connected edges, and the filesystem deletion cannot be undone. Canceling leaves the graph and files unchanged, and a deletion failure restores the original graph and owned assets. External references use **Remove Reference** instead: this removes only the graph record, its relationships and connected edges because Studio does not own external source data. Broken records remain graph-only removals. Relationship nodes retain their own removal action.
 
 ## Supported editor extension API
 
