@@ -129,7 +129,7 @@ namespace KitchenLib.Studio.Editor.Graph
                     _addRelated == null ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
             }
             evt.menu.AppendSeparator();
-            evt.menu.AppendAction("Remove from graph", _ => _removeMember?.Invoke(),
+            evt.menu.AppendAction("Remove Reference", _ => _removeMember?.Invoke(),
                 _removeMember == null ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
         }
 

@@ -81,6 +81,7 @@ namespace KitchenLib.Studio.Editor.Graph
         {
             rootVisualElement.Clear();
             _graphView = new GdoBundleGraphView(RefreshGraphState, nodeId => OpenRenameGdoDialog(nodeId),
+                confirmMemberRemoval: ConfirmMemberRemoval,
                 createGdo: CreateGdo, addSelected: AddSelected, addExternal: ShowExternalReferenceDialog,
                 renameProject: () => OpenRenameProjectDialog(), collectOverlays: CollectProjectOverlays);
             _toolbar = new GdoGraphToolbar(SelectGraph, text => _graphView.SearchAndFrame(text),
@@ -97,6 +98,19 @@ namespace KitchenLib.Studio.Editor.Graph
             rootVisualElement.Add(canvas);
             rootVisualElement.Add(_diagnostics);
             SelectGraph(Graph);
+        }
+
+        private bool ConfirmMemberRemoval(string nodeId)
+        {
+            GdoGraphNodeRecord node = Graph?.FindNode(nodeId);
+            if (node != null && node.Kind == GdoGraphNodeKind.Local && !node.IsBroken)
+                return EditorUtility.DisplayDialog("Delete GDO",
+                    "Delete '" + node.Asset.name + "' from this project? This permanently deletes its GDO asset, " +
+                    "companion data, relationships, and connected edges. This cannot be undone.",
+                    "Delete GDO", "Cancel");
+            return EditorUtility.DisplayDialog("Remove Reference",
+                "Remove this graph reference, its owned relationships, and all connected edges?",
+                "Remove Reference and Edges", "Cancel");
         }
 
         public void SelectGraph(GdoBundleGraphAsset graph) => SelectGraph(graph, null);

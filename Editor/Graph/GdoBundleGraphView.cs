@@ -654,6 +654,15 @@ namespace KitchenLib.Studio.Editor.Graph
 
         private void RemoveMemberFromAction(string nodeId)
         {
+            GdoGraphNodeRecord node = _graph.FindNode(nodeId);
+            if (node != null && node.Kind == GdoGraphNodeKind.Local && !node.IsBroken)
+            {
+                if (!_confirmMemberRemoval(nodeId)) return;
+                GdoGraphAssetDeletion.Delete(_graph, nodeId);
+                Load(_graph);
+                _graphChanged?.Invoke();
+                return;
+            }
             bool connected = _graph.HasConnections(nodeId);
             if (connected && !_confirmMemberRemoval(nodeId)) return;
             RemoveMember(nodeId, connected);
