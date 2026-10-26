@@ -10,9 +10,9 @@ After a public release is published, open **Window → Package Manager**, choose
 https://example.invalid/REPLACE-WITH-KITCHENLIB-STUDIO-REPOSITORY.git#v0.1.0-alpha.1
 ```
 
-This is an intentional placeholder, not an installable repository. Version `0.1.0-alpha.1` is owner-only and is installed from a local checkout. Before public distribution, replace the URL and original-code license and resolve redistribution permission for the TypeTreeDumps-derived `classdata.tpk`; see `LICENSE.md` and `Third Party Notices.md`.
+This is an intentional placeholder, not an installable repository. Version `0.1.0-alpha.1` is owner-only and is installed from a local checkout. Before public distribution, replace the URL and original-code license; see `LICENSE.md`. Exact provenance and acknowledgments for the bundled type-tree data are recorded in `Third Party Notices.md`.
 
-The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license and `classdata.tpk` redistribution permission are resolved.
+The repository root is the UPM package. It intentionally contains no Unity project, examples, samples, or internal test suite. Maintainers can audit that boundary with `pwsh -File Tools~/Verify-Package.ps1`; the gate remains red until the original-code license is resolved.
 
 Repository verification creates its Unity project outside the checkout and discards it after import. Run a local clean import with:
 

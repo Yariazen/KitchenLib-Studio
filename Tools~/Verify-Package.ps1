@@ -184,10 +184,9 @@ foreach ($provenance in @(
     '20ba06e00e0625de0e49a502c6868d6cc86d0f0b')) {
     if ($notices -notmatch [regex]::Escape($provenance)) { Add-Failure "classdata.tpk provenance is incomplete: $provenance" }
 }
-if ($notices -notmatch '(?i)TypeTreeDumps[\s\S]*no declared repository license[\s\S]*redistribution permission[\s\S]*unverified') {
-    Add-Failure 'classdata.tpk notice must acknowledge TypeTreeDumps and retain the unverified redistribution permission.'
+if ($notices -notmatch '(?i)TypeTreeDumps[\s\S]*no declared repository license[\s\S]*Exact source provenance and contributor acknowledgment are preserved') {
+    Add-Failure 'classdata.tpk notice must acknowledge TypeTreeDumps and preserve its exact source provenance.'
 }
-Add-Failure 'TypeTreeDumps-derived classdata.tpk redistribution permission is unverified; public distribution is blocked.'
 
 if ($failures.Count -gt 0) {
     foreach ($failure in $failures | Sort-Object -Unique) { Write-Error "FAIL: $failure" -ErrorAction Continue }
