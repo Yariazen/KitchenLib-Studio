@@ -316,8 +316,9 @@ namespace KitchenLib.Studio.Editor.Bootstrap
                         ValueSchema value = Describe(field.FieldType, new HashSet<string>(StringComparer.Ordinal));
                         bool unsupported = Contains(value, "Unsupported");
                         bool linked = Contains(value, "GdoReference");
+                        bool managedReference = PlateUpMirrorModel.HasAttribute(field, "UnityEngine.SerializeReference");
                         bool native = !unsupported && !linked && PlateUpMirrorModel.UnityFieldSerializationEligibility(field);
-                        bool sidecar = !unsupported && value.kind != "UnityObject";
+                        bool sidecar = !managedReference && !unsupported && value.kind != "UnityObject";
                         return new FieldSchema { name = field.Name, runtimeTypeName = RuntimeName(field.FieldType), visibility = field.IsPublic ? "Public" : "Private",
                             isNonSerialized = field.IsNotSerialized, isReadonly = field.IsInitOnly, serializationAttributes = Attributes(field), value = value,
                             classification = field.IsNotSerialized ? "RuntimeDerived" : unsupported ? "Unsupported" : linked ? "Linked" : "Native",

@@ -101,7 +101,7 @@ namespace KitchenLib.Studio.Editor.Bootstrap
         internal static bool IsGameDataObject(TypeReference type) => DerivesFrom(type, "KitchenData.GameDataObject");
 
         internal static bool UnitySerializationEligibility(TypeReference type) =>
-            UnitySerializationEligibility(type, new HashSet<string>(StringComparer.Ordinal));
+            UnitySerializationEligibility(type, new HashSet<string>(StringComparer.Ordinal), true);
 
         internal static bool UnityFieldSerializationEligibility(FieldDefinition field)
         {
@@ -109,21 +109,27 @@ namespace KitchenLib.Studio.Editor.Bootstrap
                 return false;
             if (!field.IsPublic && !HasAttribute(field, "UnityEngine.SerializeField") &&
                 !HasAttribute(field, "UnityEngine.SerializeReference")) return false;
+            // Managed-reference graphs need polymorphic type and cycle metadata that the
+            // current descriptor contract cannot represent safely. Keep them out of the
+            // native PropertyField route until that contract exists.
+            if (HasAttribute(field, "UnityEngine.SerializeReference")) return false;
             return UnitySerializationEligibility(field.FieldType);
         }
 
-        private static bool UnitySerializationEligibility(TypeReference type, ISet<string> visiting)
+        private static bool UnitySerializationEligibility(TypeReference type, ISet<string> visiting,
+            bool collectionAllowed)
         {
             if (type == null || type is GenericParameter || type.IsByReference || type.IsPointer) return false;
             if (type.FullName == "System.String") return true;
             if (type.IsPrimitive)
                 return type.MetadataType != MetadataType.IntPtr && type.MetadataType != MetadataType.UIntPtr;
             if (type is ArrayType array)
-                return array.Rank == 1 && UnitySerializationEligibility(array.ElementType, visiting);
+                return collectionAllowed && array.Rank == 1 &&
+                    UnitySerializationEligibility(array.ElementType, visiting, false);
             if (type is GenericInstanceType generic)
-                return generic.ElementType.FullName == "System.Collections.Generic.List`1" &&
+                return collectionAllowed && generic.ElementType.FullName == "System.Collections.Generic.List`1" &&
                     generic.GenericArguments.Count == 1 &&
-                    UnitySerializationEligibility(generic.GenericArguments[0], visiting);
+                    UnitySerializationEligibility(generic.GenericArguments[0], visiting, false);
             if (DerivesFrom(type, "UnityEngine.Object")) return true;
             TypeDefinition resolved;
             try { resolved = type.Resolve(); }
@@ -139,7 +145,8 @@ namespace KitchenLib.Studio.Editor.Bootstrap
                 return resolved.Fields.Where(field => !field.IsStatic && !field.IsLiteral && !field.IsInitOnly &&
                         !field.IsNotSerialized && (field.IsPublic || HasAttribute(field, "UnityEngine.SerializeField") ||
                         HasAttribute(field, "UnityEngine.SerializeReference")))
-                    .All(field => UnitySerializationEligibility(field.FieldType, visiting));
+                    .All(field => !HasAttribute(field, "UnityEngine.SerializeReference") &&
+                        UnitySerializationEligibility(field.FieldType, visiting, true));
             }
             finally { visiting.Remove(key); }
         }
