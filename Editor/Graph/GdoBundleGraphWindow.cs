@@ -334,11 +334,8 @@ namespace KitchenLib.Studio.Editor.Graph
         private void ShowCreateGdoMenu()
         {
             var menu = new GenericMenu();
-            foreach (string runtimeType in GdoGraphAssetCommands.SupportedRuntimeTypes)
-            {
-                string captured = runtimeType;
-                menu.AddItem(new GUIContent(captured.Substring(captured.LastIndexOf('.') + 1)), false, () => CreateGdo(captured));
-            }
+            GdoCreateMenuPresenter.Populate(menu,
+                GdoCreateMenuCatalog.Build(GdoGraphAssetCommands.SupportedRuntimeTypes), CreateGdo);
             menu.ShowAsContext();
         }
 
