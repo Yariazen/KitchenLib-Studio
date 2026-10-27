@@ -198,7 +198,8 @@ namespace KitchenLib.Studio.Editor.Graph
             if (graph.HasConnections(prefab.Id) && !removeConnectedEdges)
                 throw new InvalidOperationException("Explicitly allow removing connected edges before removing this prefab.");
             Record(graph, "Remove prefab graph node");
-            if (!GdoGraphMaterialResolver.DeleteOwned(graph, prefab))
+            if (prefab.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                !GdoGraphMaterialResolver.DeleteOwned(graph, prefab))
                 throw new InvalidOperationException("Refused to delete a material that is not owned by this prefab.");
             foreach (GdoGraphEdgeRecord edge in graph.Edges
                 .Where(value => value.InputNodeId == prefabId || value.OutputNodeId == prefabId).ToArray())
