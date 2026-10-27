@@ -51,21 +51,93 @@ namespace KitchenLib.Studio.Editor.Graph
             {
                 var primitive = new EnumField("Primitive", record.PrimitiveType) { name = "prefab-primitive-type" };
                 var scale = new Vector3Field("Scale") { name = "prefab-scale", value = record.Scale };
-                var material = new ObjectField("Material") { name = "prefab-material", objectType = typeof(Material),
-                    allowSceneObjects = false, value = record.Material };
                 var collider = new Toggle("Collider") { name = "prefab-collider", value = record.IncludeCollider };
                 Action commit = () =>
                 {
                     GdoBundleGraphRepository.ConfigurePrimitive(graph, record.Id,
-                        (PrimitiveType)primitive.value, scale.value, material.value as Material, collider.value);
+                        (PrimitiveType)primitive.value, scale.value, record.Material, collider.value);
                     changed?.Invoke();
                 };
                 primitive.RegisterValueChangedCallback(_ => commit());
                 scale.RegisterValueChangedCallback(_ => commit());
-                material.RegisterValueChangedCallback(_ => commit());
                 collider.RegisterValueChangedCallback(_ => commit());
                 extensionContainer.Add(primitive); extensionContainer.Add(scale);
-                extensionContainer.Add(material); extensionContainer.Add(collider);
+                extensionContainer.Add(collider);
+
+                var materialMode = new EnumField("Material", record.MaterialMode)
+                    { name = "prefab-material-mode", tooltip = "Use no material, an existing Material asset, or generate a graph-owned material." };
+                materialMode.RegisterValueChangedCallback(evt =>
+                {
+                    GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                        (GdoGraphPrefabMaterialMode)evt.newValue, record.Material, record.ShaderMode,
+                        record.CustomShader, record.MaterialColor, record.ColorPropertyName);
+                    changed?.Invoke();
+                });
+                extensionContainer.Add(materialMode);
+                if (record.MaterialMode == GdoGraphPrefabMaterialMode.ExistingMaterial)
+                {
+                    var existing = new ObjectField("Existing Material") { name = "prefab-existing-material",
+                        objectType = typeof(Material), allowSceneObjects = false, value = record.Material,
+                        tooltip = "Use a Material asset already stored in this Unity project." };
+                    existing.RegisterValueChangedCallback(evt =>
+                    {
+                        GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                            GdoGraphPrefabMaterialMode.ExistingMaterial, evt.newValue as Material,
+                            record.ShaderMode, null, record.MaterialColor, record.ColorPropertyName);
+                        changed?.Invoke();
+                    });
+                    extensionContainer.Add(existing);
+                }
+                else if (record.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial)
+                {
+                    var shaderMode = new EnumField("Shader", record.ShaderMode)
+                        { name = "prefab-material-shader-mode", tooltip = "Choose Studio's lit or flat preset, or provide a custom Shader asset." };
+                    shaderMode.RegisterValueChangedCallback(evt =>
+                    {
+                        GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                            record.MaterialMode, null, (GdoGraphPrefabShaderMode)evt.newValue,
+                            record.CustomShader, record.MaterialColor, record.ColorPropertyName);
+                        changed?.Invoke();
+                    });
+                    extensionContainer.Add(shaderMode);
+                    if (record.ShaderMode == GdoGraphPrefabShaderMode.CustomShader)
+                    {
+                        var customShader = new ObjectField("Custom Shader") { name = "prefab-custom-shader",
+                            objectType = typeof(Shader), allowSceneObjects = false, value = record.CustomShader,
+                            tooltip = "Shader asset used by the generated material." };
+                        customShader.RegisterValueChangedCallback(evt =>
+                        {
+                            GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                                record.MaterialMode, null, record.ShaderMode, evt.newValue as Shader,
+                                record.MaterialColor, record.ColorPropertyName);
+                            changed?.Invoke();
+                        });
+                        var property = new TextField("Color Property") { name = "prefab-color-property",
+                            value = record.ColorPropertyName, isDelayed = true,
+                            tooltip = "Shader color property to set; defaults to _Color." };
+                        property.RegisterValueChangedCallback(evt =>
+                        {
+                            if (string.IsNullOrWhiteSpace(evt.newValue))
+                            { property.SetValueWithoutNotify(record.ColorPropertyName); return; }
+                            GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                                record.MaterialMode, null, record.ShaderMode, record.CustomShader,
+                                record.MaterialColor, evt.newValue);
+                            changed?.Invoke();
+                        });
+                        extensionContainer.Add(customShader);
+                        extensionContainer.Add(property);
+                    }
+                    var color = new ColorField("Color") { name = "prefab-material-color",
+                        value = record.MaterialColor, tooltip = "Color written to the configured shader property." };
+                    color.RegisterValueChangedCallback(evt =>
+                    {
+                        GdoBundleGraphRepository.ConfigurePrefabMaterial(graph, record.Id,
+                            record.MaterialMode, null, record.ShaderMode, record.CustomShader,
+                            evt.newValue, record.ColorPropertyName);
+                        changed?.Invoke();
+                    });
+                    extensionContainer.Add(color);
+                }
             }
             else
             {
