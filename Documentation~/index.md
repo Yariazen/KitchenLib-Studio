@@ -2,14 +2,14 @@
 
 Start with the [root README](../README.md) for installation and first-run setup. Maintainers can follow the [release process](release-process.md) for the manual alpha release checks and planned v1 workflow.
 
-KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and building mod AssetBundles. Package identity: `com.kitchenlib.studio`, version `0.1.0-alpha.3`; use Unity 2020.3.
+KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and building mod AssetBundles. Package identity: `com.kitchenlib.studio`, version `0.1.0-alpha.4`; use Unity 2020.3.
 
 ## Installation
 
 Open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the repository URL pinned to this release tag:
 
 ```text
-https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.3
+https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.4
 ```
 
 For an internal local checkout, choose **+ → Add package from disk** and select its root `package.json`. The MIT grant in `LICENSE.md` covers original KitchenLib Studio code and documentation only; exact provenance and acknowledgments for bundled third-party material are recorded in `Third Party Notices.md`.
