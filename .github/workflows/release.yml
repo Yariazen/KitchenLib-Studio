@@ -18,7 +18,10 @@ jobs:
           fetch-depth: 0
       - name: Validate release tag
         shell: pwsh
-        run: ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
       - name: Verify package boundary and licenses
         shell: pwsh
         run: ./Tools~/Verify-Package.ps1
@@ -70,7 +73,10 @@ jobs:
           fetch-depth: 0
       - name: Validate release tag
         shell: pwsh
-        run: ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
       - name: Verify clean local-package import
         shell: pwsh
         env:
@@ -95,12 +101,19 @@ jobs:
       - name: Revalidate tag and checksum
         shell: pwsh
         run: |
-          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
           $directory = Join-Path $env:RUNNER_TEMP 'release-files'
           $zip = @(Get-ChildItem -LiteralPath $directory -Filter '*.zip')
           $checksum = @(Get-ChildItem -LiteralPath $directory -Filter '*.zip.sha256')
           if ($zip.Count -ne 1 -or $checksum.Count -ne 1) { throw 'Expected exactly one ZIP and one checksum file.' }
-          $expected = (Get-Content -Raw $checksum[0].FullName).Split(' ', [StringSplitOptions]::RemoveEmptyEntries)[0]
+          if ($checksum[0].Name -cne ($zip[0].Name + '.sha256')) { throw 'Checksum filename does not match the ZIP filename.' }
+          $line = Get-Content -Raw $checksum[0].FullName
+          $parsed = [regex]::Match($line, '\A(?<hash>[0-9a-f]{64})  (?<file>[^\r\n]+)\r?\n?\z')
+          if (-not $parsed.Success) { throw 'Checksum file must contain one conventional SHA-256 line.' }
+          if ($parsed.Groups['file'].Value -cne $zip[0].Name) { throw 'Checksum line does not name the ZIP.' }
+          $expected = $parsed.Groups['hash'].Value
           $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip[0].FullName).Hash.ToLowerInvariant()
           if ($expected -cne $actual) { throw 'Downloaded release checksum does not match the ZIP.' }
       - name: Create draft prerelease

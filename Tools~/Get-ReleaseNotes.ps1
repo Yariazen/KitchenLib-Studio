@@ -14,6 +14,7 @@ $end = $lines.Count
 for ($index = $start + 1; $index -lt $lines.Count; $index++) {
     if ($lines[$index].StartsWith('## ', [StringComparison]::Ordinal)) { $end = $index; break }
 }
+if ($end -le $start + 1) { throw "Changelog section for version $Version is empty." }
 $body = @($lines[($start + 1)..($end - 1)])
 while ($body.Count -gt 0 -and [string]::IsNullOrWhiteSpace($body[0])) { $body = @($body | Select-Object -Skip 1) }
 while ($body.Count -gt 0 -and [string]::IsNullOrWhiteSpace($body[-1])) { $body = @($body | Select-Object -First ($body.Count - 1)) }

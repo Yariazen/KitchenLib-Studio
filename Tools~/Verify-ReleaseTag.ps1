@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$PackageRoot,
-    [Parameter(Mandatory = $true)][string]$Tag
+    [Parameter(Mandatory = $true)][string]$Tag,
+    [switch]$RequireMainProvenance,
+    [string]$MainRef = 'origin/main',
+    [string]$ExpectedCommit
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,5 +26,25 @@ if (-not $readme.Contains($installUrl)) {
 $changelog = Get-Content -Raw -LiteralPath (Join-Path $PackageRoot 'CHANGELOG.md')
 if (-not $changelog.Contains("## [$version]")) {
     throw "CHANGELOG.md does not contain a section for release tag $Tag."
+}
+if ($RequireMainProvenance) {
+    if ([string]::IsNullOrWhiteSpace($ExpectedCommit)) {
+        throw 'ExpectedCommit is required when main provenance is required.'
+    }
+    function Invoke-Git([string[]]$Arguments) {
+        $output = @(& git -C $PackageRoot @Arguments 2>&1)
+        if ($LASTEXITCODE -ne 0) { throw "git $($Arguments -join ' ') failed: $($output -join ' ')" }
+        return ($output -join "`n").Trim()
+    }
+    $tagRef = "refs/tags/$Tag"
+    if ((Invoke-Git @('cat-file', '-t', $tagRef)) -cne 'tag') {
+        throw "Release tag $Tag must be an annotated tag."
+    }
+    $peeled = Invoke-Git @('rev-parse', "$tagRef^{}")
+    $head = Invoke-Git @('rev-parse', 'HEAD')
+    $main = Invoke-Git @('rev-parse', $MainRef)
+    if ($peeled -cne $ExpectedCommit -or $head -cne $ExpectedCommit -or $main -cne $ExpectedCommit) {
+        throw "Release provenance mismatch: tag=$peeled HEAD=$head $MainRef=$main expected=$ExpectedCommit."
+    }
 }
 Write-Output "PASS: release tag $Tag matches package metadata, README, and changelog."
