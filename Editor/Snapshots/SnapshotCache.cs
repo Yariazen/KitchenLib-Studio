@@ -33,9 +33,12 @@ namespace KitchenLib.Studio.Editor.Snapshots
         private readonly string _root;
         public SnapshotCache(string root = null)
         {
-            _root = string.IsNullOrEmpty(root) ? Path.Combine("Library", "KitchenLibStudio", "Snapshots") : root;
+            _root = string.IsNullOrEmpty(root)
+                ? Bootstrap.KitchenLibStudioGeneratedPaths.SnapshotCacheRoot
+                : Path.GetFullPath(root);
         }
         public event Action Changed;
+        public string Root => _root;
         public string PngPath(string key) => Path.Combine(_root, ValidateKey(key) + ".png");
         public string MetadataPath(string key) => Path.Combine(_root, ValidateKey(key) + ".json");
 
@@ -96,7 +99,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             if (string.IsNullOrEmpty(key) || key.Length != 64 || key.Any(value => !Uri.IsHexDigit(value))) throw new ArgumentException("Snapshot cache key must be a SHA-256 hex value.", nameof(key));
             return key.ToLowerInvariant();
         }
-        private static bool IsPng(byte[] bytes) => bytes != null && bytes.Length >= PngSignature.Length && !PngSignature.Where((value, index) => bytes[index] != value).Any();
+        internal static bool IsPng(byte[] bytes) => bytes != null && bytes.Length >= PngSignature.Length && !PngSignature.Where((value, index) => bytes[index] != value).Any();
         private static void Replace(string source, string destination)
         {
             if (File.Exists(destination)) File.Replace(source, destination, null); else File.Move(source, destination);

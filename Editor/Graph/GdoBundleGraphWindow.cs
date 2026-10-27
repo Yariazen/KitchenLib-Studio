@@ -167,13 +167,13 @@ namespace KitchenLib.Studio.Editor.Graph
             if (_graphView == null) CreateGUI();
         }
 
-        private void CreateGdo(string runtimeTypeName)
+        private void CreateGdo(string runtimeTypeName, Vector2 requestedPosition)
         {
             if (Graph == null) return;
-            OpenCreateGdoDialog(runtimeTypeName);
+            OpenCreateGdoDialog(runtimeTypeName, requestedPosition);
         }
 
-        public GdoNameDialog OpenCreateGdoDialog(string runtimeTypeName)
+        public GdoNameDialog OpenCreateGdoDialog(string runtimeTypeName, Vector2? requestedPosition = null)
         {
             GdoBundleGraphAsset target = Graph;
             if (target == null) throw new InvalidOperationException("Open a bundle project first.");
@@ -181,7 +181,8 @@ namespace KitchenLib.Studio.Editor.Graph
             return GdoNameDialog.Open("Create " + shortName, "New " + shortName,
                 value => GdoBundleProjectRepository.GdoFolder(target) + "/" + value + ".asset", value =>
                 {
-                    GdoGraphNodeRecord node = GdoGraphAssetCommands.CreateGdo(target, runtimeTypeName, value, new Rect(40, 40, 260, 160));
+                    GdoGraphNodeRecord node = GdoGraphAssetCommands.CreateGdo(target, runtimeTypeName, value,
+                        CreationBounds(requestedPosition, new Vector2(260f, 160f)));
                     SelectGraph(target, node.Id);
                     Selection.activeObject = node.Asset;
                 });
@@ -239,15 +240,18 @@ namespace KitchenLib.Studio.Editor.Graph
             SelectGraph(Graph);
         }
 
-        private void AddExternal(GdoBundleGraphAsset targetGraph, int id, string expectedType)
-            => AddExternal(targetGraph, ExternalGdoCatalogRepository.VanillaProviderKey, id, expectedType);
+        private void AddExternal(GdoBundleGraphAsset targetGraph, int id, string expectedType,
+            Vector2? requestedPosition = null)
+            => AddExternal(targetGraph, ExternalGdoCatalogRepository.VanillaProviderKey, id, expectedType,
+                requestedPosition);
 
-        private void AddExternal(GdoBundleGraphAsset targetGraph, string providerKey, int id, string expectedType)
+        private void AddExternal(GdoBundleGraphAsset targetGraph, string providerKey, int id, string expectedType,
+            Vector2? requestedPosition = null)
         {
             if (targetGraph == null) return;
             ExternalGdoCatalogEntry entry = ExternalGdoCatalogRepository.Current.Find(providerKey, id, expectedType);
             GdoBundleGraphRepository.AddExternal(targetGraph, providerKey, id, expectedType,
-                new Rect(40, 40, 220, 120), entry?.DisplayName);
+                CreationBounds(requestedPosition, new Vector2(220f, 120f)), entry?.DisplayName);
             SelectGraph(targetGraph);
         }
 
@@ -334,19 +338,21 @@ namespace KitchenLib.Studio.Editor.Graph
         private void ShowCreateGdoMenu()
         {
             var menu = new GenericMenu();
-            foreach (string runtimeType in GdoGraphAssetCommands.SupportedRuntimeTypes)
-            {
-                string captured = runtimeType;
-                menu.AddItem(new GUIContent(captured.Substring(captured.LastIndexOf('.') + 1)), false, () => CreateGdo(captured));
-            }
+            GdoCreateMenuPresenter.Populate(menu,
+                GdoCreateMenuCatalog.Build(GdoGraphAssetCommands.SupportedRuntimeTypes),
+                new Vector2(40f, 40f), CreateGdo);
             menu.ShowAsContext();
         }
 
-        private void ShowExternalReferenceDialog()
+        private void ShowExternalReferenceDialog(Vector2 requestedPosition)
         {
             if (Graph != null) GdoExternalReferenceDialog.Open(Graph,
-                (GdoBundleGraphAsset graph, string provider, int id, string type) => AddExternal(graph, provider, id, type));
+                (GdoBundleGraphAsset graph, string provider, int id, string type) =>
+                    AddExternal(graph, provider, id, type, requestedPosition));
         }
+
+        internal static Rect CreationBounds(Vector2? requestedPosition, Vector2 size) =>
+            new Rect(requestedPosition ?? new Vector2(40f, 40f), size);
 
         private void CollectProjectOverlays()
         {

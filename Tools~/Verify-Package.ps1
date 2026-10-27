@@ -94,7 +94,7 @@ foreach ($file in $allFiles) {
 try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
     if ($package.name -cne 'com.kitchenlib.studio') { Add-Failure "package.json name must be com.kitchenlib.studio." }
-    if ($package.version -cne '0.1.0-alpha.4') { Add-Failure "package.json version must be 0.1.0-alpha.4." }
+    if ($package.version -cne '0.1.0-alpha.5') { Add-Failure "package.json version must be 0.1.0-alpha.5." }
     $expectedRepositoryUrl = 'https://github.com/Yariazen/KitchenLib-Studio.git'
     if ($package.repository.type -cne 'git' -or $package.repository.url -cne $expectedRepositoryUrl) {
         Add-Failure "package.json repository must be $expectedRepositoryUrl."
@@ -497,5 +497,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.4 package and repository are production-only.'
+Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.5 package and repository are production-only.'
 exit 0

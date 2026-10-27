@@ -9,25 +9,27 @@ using KitchenLib.Studio.Editor.Overlays;
 
 namespace KitchenLib.Studio.Editor.Graph
 {
+    internal enum GdoRelationshipEditKind { ValueOnly, PortTopology }
+
     internal sealed class GdoGraphRelationshipNodeEditorElement : VisualElement
     {
         private readonly GdoGraphConnectionController _controller;
         private readonly string _recordId;
         private readonly GdoValueDescriptorData _descriptor;
         private readonly string _rootPath;
-        private readonly Action _structureChanged;
+        private readonly Action<GdoRelationshipEditKind> _changed;
         private GdoOverlayValue _value;
         private string _removedCollectionPath;
         private int _removedCollectionIndex = -1;
 
         public GdoGraphRelationshipNodeEditorElement(GdoBundleGraphAsset graph, GdoGraphRelationshipRecord record,
-            GdoValueDescriptorData descriptor, Action structureChanged = null)
+            GdoValueDescriptorData descriptor, Action<GdoRelationshipEditKind> changed = null)
         {
             _controller = new GdoGraphConnectionController(graph ?? throw new ArgumentNullException(nameof(graph)));
             _recordId = record?.Id ?? throw new ArgumentNullException(nameof(record));
             _descriptor = descriptor ?? throw new ArgumentNullException(nameof(descriptor));
             _rootPath = record.FieldPath;
-            _structureChanged = structureChanged;
+            _changed = changed;
             _value = record.Value ?? GdoOverlayValueEditor.CreateDefault(descriptor);
             Rebuild();
         }
@@ -48,6 +50,7 @@ namespace KitchenLib.Studio.Editor.Graph
 
         private void Commit(GdoOverlayValue replacement)
         {
+            GdoRelationshipEditKind editKind = ClassifyEdit(_descriptor, _value, replacement, _rootPath);
             try
             {
                 if (_removedCollectionIndex >= 0)
@@ -63,7 +66,55 @@ namespace KitchenLib.Studio.Editor.Graph
             }
             _value = replacement;
             Rebuild();
-            _structureChanged?.Invoke();
+            _changed?.Invoke(editKind);
+        }
+
+        internal static GdoRelationshipEditKind ClassifyEdit(GdoValueDescriptorData descriptor,
+            GdoOverlayValue before, GdoOverlayValue after, string rootPath)
+        {
+            var beforePaths = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            var afterPaths = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+            CollectReferencePaths(descriptor, before, rootPath, beforePaths);
+            CollectReferencePaths(descriptor, after, rootPath, afterPaths);
+            return beforePaths.SetEquals(afterPaths)
+                ? GdoRelationshipEditKind.ValueOnly
+                : GdoRelationshipEditKind.PortTopology;
+        }
+
+        private static void CollectReferencePaths(GdoValueDescriptorData descriptor, GdoOverlayValue value,
+            string path, System.Collections.Generic.ISet<string> paths)
+        {
+            if (descriptor == null) return;
+            if (descriptor.Kind == "GdoReference")
+            {
+                paths.Add(path);
+                return;
+            }
+            if (descriptor.Kind == "Nullable")
+            {
+                if (value != null && value.Kind != GdoOverlayValueKind.Null)
+                    CollectReferencePaths(descriptor.Element, value, path, paths);
+                return;
+            }
+            if (descriptor.Kind == "Struct")
+            {
+                foreach (GdoValueMemberDescriptorData member in descriptor.Members ??
+                    Array.Empty<GdoValueMemberDescriptorData>())
+                {
+                    GdoOverlayMember authored = value?.Members.FirstOrDefault(item => item.Name == member.Name);
+                    CollectReferencePaths(member.Value,
+                        authored?.Value ?? GdoOverlayValueEditor.CreateDefault(member.Value),
+                        path + "." + member.Name, paths);
+                }
+                return;
+            }
+            if (descriptor.Kind == "List" || descriptor.Kind == "Array" || descriptor.Kind == "Set")
+            {
+                if (value == null) return;
+                for (int index = 0; index < value.Values.Count; index++)
+                    CollectReferencePaths(descriptor.Element, value.Values[index],
+                        path + "[" + index + "]", paths);
+            }
         }
 
         private void Rebuild()

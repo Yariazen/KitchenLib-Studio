@@ -15,19 +15,27 @@ namespace KitchenLib.Studio.Editor.Snapshots
     internal sealed class AssetsToolsSnapshotCatalogReader : IPlateUpSnapshotCatalogReader
     {
         private static readonly string[] Containers = { "globalgamemanagers.assets", "resources.assets", "sharedassets0.assets", "sharedassets1.assets", "level0", "level1" };
+        private readonly string _classDataPath;
+
+        public AssetsToolsSnapshotCatalogReader() : this(KitchenLibStudioGeneratedPaths.PackageFilePath(
+            "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk")) { }
+
+        internal AssetsToolsSnapshotCatalogReader(string classDataPath)
+        {
+            _classDataPath = classDataPath ?? throw new ArgumentNullException(nameof(classDataPath));
+        }
+
         public SnapshotCatalogScanResult Scan(string gameRoot, IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)
         {
             PlateUpPlatformLayout layout = PlateUpPlatformLayout.ResolveLayout(gameRoot);
             string dataRoot = layout.DataRoot;
-            string classData = KitchenLibStudioGeneratedPaths.PackageFilePath(
-                "Editor/ThirdParty/AssetRipper.TypeTreeData/classdata.tpk");
             var drafts = new List<RecordDraft>(); var edges = new List<EdgeDraft>(); var diagnostics = new List<VanillaAssetDiagnosticData>();
             var sources = new List<VanillaAssetSourceData>();
             var manager = new AssetsManager();
             var mono = new MonoCecilTempGenerator(layout.ManagedDirectory);
             try
             {
-                manager.LoadClassPackage(classData); manager.MonoTempGenerator = mono;
+                manager.LoadClassPackage(_classDataPath); manager.MonoTempGenerator = mono;
                 for (int fileIndex = 0; fileIndex < Containers.Length; fileIndex++)
                 {
                     cancellationToken.ThrowIfCancellationRequested(); string relative = Containers[fileIndex]; string path = Path.Combine(dataRoot, relative);

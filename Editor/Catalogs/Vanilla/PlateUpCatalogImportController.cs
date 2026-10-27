@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -29,9 +28,6 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         {
             if (installation == null) return;
             string schema = KitchenLibStudioGeneratedPaths.SchemaPath;
-            string destination = KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath;
-            string snapshotDestination = KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath;
-            string snapshotIndexDestination = KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath;
             CancellationTokenSource cancellation;
             int generation;
             Task<PlateUpCatalogImportResult> operation;
@@ -49,7 +45,7 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                         cancellation.Cancel();
                 });
                 Task previous = _activeOperation;
-                operation = RunQueued(previous, installation, destination, snapshotDestination, snapshotIndexDestination, schema, progress, cancellation.Token);
+                operation = RunQueued(previous, installation, schema, progress, cancellation.Token);
                 _activeOperation = operation;
             }
             PlateUpCatalogImportResult result;
@@ -82,53 +78,19 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         }
 
         private static async Task<PlateUpCatalogImportResult> RunQueued(Task previous, PlateUpInstallation installation,
-            string destination, string snapshotDestination, string snapshotIndexDestination, string schema, IProgress<VanillaGdoScanProgress> progress, CancellationToken token)
+            string schema, IProgress<VanillaGdoScanProgress> progress, CancellationToken token)
         {
             try { await previous; }
             catch { }
             if (token.IsCancellationRequested) return PlateUpCatalogImportResult.CancelledResult();
-            byte[][] snapshotPayload;
             try
             {
                 KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
-                snapshotPayload = await Task.Run(() =>
-                {
-                    SnapshotCatalogScanResult scan = new AssetsToolsSnapshotCatalogReader().Scan(installation.GameRoot, null, token);
-                    token.ThrowIfCancellationRequested();
-                    return new[] { VanillaAssetCatalogFile.Serialize(scan.Data),
-                        ExternalGdoSnapshotIndexFile.Serialize(ExternalGdoSnapshotIndexFile.Build(scan.Data)) };
-                }, CancellationToken.None);
+                var service = new PlateUpCatalogImportService(new DefaultPlateUpCatalogImportPipeline(schema));
+                return await service.ImportCombinedAsync(installation, PublicationPaths(), progress, token);
             }
             catch (OperationCanceledException) { return PlateUpCatalogImportResult.CancelledResult(); }
             catch (Exception exception) { return PlateUpCatalogImportResult.Failure(exception.Message); }
-            byte[] previousGdo = File.Exists(destination) ? File.ReadAllBytes(destination) : null;
-            byte[] previousSnapshot = File.Exists(snapshotDestination) ? File.ReadAllBytes(snapshotDestination) : null;
-            var service = new PlateUpCatalogImportService(new DefaultPlateUpCatalogImportPipeline(schema));
-            PlateUpCatalogImportResult result = await service.ImportAsync(installation, destination, progress, token);
-            if (!result.Succeeded) return result;
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                VanillaAssetCatalogFile.PublishAtomic(snapshotDestination, snapshotPayload[0]);
-                File.WriteAllBytes(snapshotIndexDestination, snapshotPayload[1]);
-                return PlateUpCatalogImportResult.Success();
-            }
-            catch (OperationCanceledException)
-            {
-                Restore(destination, previousGdo); Restore(snapshotDestination, previousSnapshot);
-                return PlateUpCatalogImportResult.CancelledResult();
-            }
-            catch (Exception exception)
-            {
-                Restore(destination, previousGdo); Restore(snapshotDestination, previousSnapshot);
-                return PlateUpCatalogImportResult.Failure(exception.Message);
-            }
-        }
-
-        private static void Restore(string path, byte[] previous)
-        {
-            if (previous == null) { if (File.Exists(path)) File.Delete(path); return; }
-            Directory.CreateDirectory(Path.GetDirectoryName(path)); File.WriteAllBytes(path, previous);
         }
 
         public static void ImportBatch()
@@ -150,26 +112,36 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 installation = result.Installations[0];
             }
 
-            ImportGdoBatch(installation, CancellationToken.None);
-            ImportSnapshotBatch(installation, CancellationToken.None);
+            ImportCombinedBatch(installation, CancellationToken.None);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         }
 
         public static void ImportGdoBatch(PlateUpInstallation installation, CancellationToken token)
         {
-            KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
-            var pipeline = new DefaultPlateUpCatalogImportPipeline(KitchenLibStudioGeneratedPaths.SchemaPath);
-            VanillaGdoScanResult scan = pipeline.Scan(installation, null, token); byte[] content = pipeline.Build(installation, scan, token);
-            pipeline.Publish(KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath, content, token);
+            ImportCombinedBatch(installation, token);
         }
 
         public static void ImportSnapshotBatch(PlateUpInstallation installation, CancellationToken token)
         {
-            KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
-            SnapshotCatalogScanResult scan = new AssetsToolsSnapshotCatalogReader().Scan(installation.GameRoot, null, token);
-            VanillaAssetCatalogFile.PublishAtomic(KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath,
-                VanillaAssetCatalogFile.Serialize(scan.Data));
-            ExternalGdoSnapshotIndexFile.Publish(KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath, scan.Data);
+            ImportCombinedBatch(installation, token);
         }
+
+        public static void ImportCombinedBatch(PlateUpInstallation installation, CancellationToken token)
+        {
+            KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
+            var service = new PlateUpCatalogImportService(
+                new DefaultPlateUpCatalogImportPipeline(KitchenLibStudioGeneratedPaths.SchemaPath));
+            PlateUpCatalogImportResult result = service.ImportCombinedBlocking(installation, PublicationPaths(), null, token);
+            if (result.Cancelled) throw new OperationCanceledException(token);
+            if (!result.Succeeded) throw new InvalidOperationException(result.Error);
+            CatalogChanged?.Invoke();
+        }
+
+        private static VanillaCatalogPublicationPaths PublicationPaths() =>
+            new VanillaCatalogPublicationPaths(KitchenLibStudioGeneratedPaths.VanillaGdoCatalogPath,
+                KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath,
+                KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath,
+                KitchenLibStudioGeneratedPaths.SnapshotCacheRoot,
+                KitchenLibStudioGeneratedPaths.CatalogueStagingRoot);
     }
 }
