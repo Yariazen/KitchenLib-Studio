@@ -12,6 +12,8 @@ KitchenLib Studio is a UPM package at the repository root. Release tags use `v<p
 
 Do not include a Unity project, examples, internal tests, generated game data, or agent files in the package or archive. Do not publish the candidate zip merely because local verification passed.
 
-## Planned v1 release automation
+## Tag-driven draft releases
 
-At v1, tag-driven automation should validate that the tag matches `package.json` and the repository installation URL; run the package and license/provenance gate; perform a clean Unity import; verify changelog coverage; build the allowlisted archive and checksum; and create a **draft** GitHub release. A human reviews and approves the draft before publication. This workflow is a plan, not an implemented release trigger.
+After the reviewed release-preparation PR merges, create an annotated `v<package.json version>` tag at the verified `main` commit and push only that tag. `.github/workflows/release.yml` validates the tag against package metadata, the README installation URL, and the matching changelog section; runs the package/license gate; builds and inspects the allowlisted archive and checksum; and requires a clean Unity 2020.3 import on the self-hosted `unity-2020.3` runner. A skipped or unavailable Unity job prevents release creation.
+
+When every gate succeeds, the workflow uses GitHub's scoped token to create a **draft prerelease** targeting the tagged commit and attaches the ZIP plus its `.sha256` file. A human must inspect the target commit, notes, artifacts, and checksum before choosing **Publish release** in GitHub. A failed tag is immutable: correct the problem under a new version and tag instead of moving or replacing the failed tag.
