@@ -91,7 +91,29 @@ try {
         Copy-Item -LiteralPath $file.Source -Destination $target
     }
 
-    Compress-Archive -Path (Join-Path $stagingRoot '*') -DestinationPath $DestinationPath -CompressionLevel Optimal
+    Add-Type -AssemblyName System.IO.Compression
+    $fixedTimestamp = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
+    $archiveStream = [IO.File]::Open($DestinationPath, [IO.FileMode]::CreateNew,
+        [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+    try {
+        $deterministicArchive = [IO.Compression.ZipArchive]::new(
+            $archiveStream, [IO.Compression.ZipArchiveMode]::Create, $false)
+        try {
+            foreach ($file in $packageFiles) {
+                $entry = $deterministicArchive.CreateEntry(
+                    $file.Relative, [IO.Compression.CompressionLevel]::NoCompression)
+                $entry.LastWriteTime = $fixedTimestamp
+                $entry.ExternalAttributes = 0
+                $stagedPath = Join-Path $stagingRoot ($file.Relative.Replace('/', [IO.Path]::DirectorySeparatorChar))
+                $input = [IO.File]::OpenRead($stagedPath)
+                $output = $entry.Open()
+                try { $input.CopyTo($output) }
+                finally { $output.Dispose(); $input.Dispose() }
+            }
+        }
+        finally { $deterministicArchive.Dispose() }
+    }
+    finally { $archiveStream.Dispose() }
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archive = [System.IO.Compression.ZipFile]::OpenRead($DestinationPath)
