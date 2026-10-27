@@ -16,6 +16,8 @@ namespace KitchenLib.Studio.Editor.Graph
 
     internal static class GdoCreateMenuCatalog
     {
+        private const string CommonRoot = "KitchenData.GameDataObject";
+
         public static IReadOnlyList<GdoCreateMenuEntry> Build(IEnumerable<string> creatableRuntimeTypes) =>
             Build(creatableRuntimeTypes, value => GdoDescriptorCatalog.ForRuntimeType(value)?.BaseTypeName);
 
@@ -26,32 +28,41 @@ namespace KitchenLib.Studio.Editor.Graph
             if (baseTypeName == null) throw new ArgumentNullException(nameof(baseTypeName));
             string[] types = creatableRuntimeTypes.Where(value => !string.IsNullOrWhiteSpace(value))
                 .Distinct(StringComparer.Ordinal).OrderBy(value => value, StringComparer.Ordinal).ToArray();
-            var creatable = new HashSet<string>(types, StringComparer.Ordinal);
             var families = types.ToDictionary(value => value,
-                value => Family(value, creatable, baseTypeName), StringComparer.Ordinal);
+                value => Family(value, baseTypeName), StringComparer.Ordinal);
             Dictionary<string, int> shortNameCounts = types.Concat(families.Values).Distinct(StringComparer.Ordinal)
                 .GroupBy(ShortName, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
 
-            return types.Select(type => new GdoCreateMenuEntry(type,
-                    Label(families[type], shortNameCounts) + "/" + Label(type, shortNameCounts)))
+            GdoCreateMenuEntry[] entries = types.Select(type =>
+                {
+                    string family = families[type];
+                    string leaf = Label(type, shortNameCounts);
+                    if (string.Equals(family, type, StringComparison.Ordinal)) leaf = "Create " + leaf;
+                    return new GdoCreateMenuEntry(type, Label(family, shortNameCounts) + "/" + leaf);
+                })
                 .OrderBy(value => value.MenuPath, StringComparer.Ordinal)
                 .ThenBy(value => value.RuntimeTypeName, StringComparer.Ordinal).ToArray();
+
+            if (entries.Select(value => value.RuntimeTypeName).Distinct(StringComparer.Ordinal).Count() != entries.Length)
+                throw new InvalidOperationException("Create GDO catalogue contains duplicate runtime types.");
+            if (entries.Select(value => value.MenuPath).Distinct(StringComparer.Ordinal).Count() != entries.Length)
+                throw new InvalidOperationException("Create GDO catalogue contains colliding menu paths. Qualify the conflicting type labels.");
+            return entries;
         }
 
-        private static string Family(string type, ISet<string> creatable, Func<string, string> baseTypeName)
+        private static string Family(string type, Func<string, string> baseTypeName)
         {
-            string family = type;
             string current = type;
             var visited = new HashSet<string>(StringComparer.Ordinal);
-            while (!string.IsNullOrWhiteSpace(current) && visited.Add(current))
+            while (visited.Add(current))
             {
                 string baseType = baseTypeName(current);
-                if (string.IsNullOrWhiteSpace(baseType)) break;
-                if (creatable.Contains(baseType)) family = baseType;
+                if (string.Equals(baseType, CommonRoot, StringComparison.Ordinal)) return current;
+                if (string.IsNullOrWhiteSpace(baseType)) return type;
                 current = baseType;
             }
-            return family;
+            return type;
         }
 
         private static string Label(string type, IReadOnlyDictionary<string, int> shortNameCounts)

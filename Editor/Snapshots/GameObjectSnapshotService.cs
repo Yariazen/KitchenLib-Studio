@@ -62,6 +62,20 @@ namespace KitchenLib.Studio.Editor.Snapshots
             return _renderVanilla(model, options);
         }
 
+        internal SnapshotRenderResult RenderVanillaBlocking(string key, SnapshotRenderOptions options,
+            CancellationToken token)
+        {
+            if (_repository == null || _catalog == null || string.IsNullOrEmpty(_gameRoot))
+                throw new InvalidOperationException("Vanilla snapshot dependencies are not configured.");
+            VanillaAssetRecord record = _repository.Find(key);
+            if (record == null) throw new InvalidOperationException("Vanilla GameObject key was not found: " + key);
+            token.ThrowIfCancellationRequested();
+            VanillaPreviewModel model = Task.Run(
+                () => _decoder.Decode(_gameRoot, record, _catalog, null, token), token).GetAwaiter().GetResult();
+            token.ThrowIfCancellationRequested();
+            return _renderVanilla(model, options);
+        }
+
         private static SnapshotRenderResult ReconstructAndRenderVanilla(VanillaPreviewModel model,
             SnapshotRenderOptions options)
         {

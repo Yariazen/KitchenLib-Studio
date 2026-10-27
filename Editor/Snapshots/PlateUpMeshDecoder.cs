@@ -308,6 +308,11 @@ namespace KitchenLib.Studio.Editor.Snapshots
             cancellationToken.ThrowIfCancellationRequested();
             string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
             string assetPath = Path.Combine(dataRoot, relativeAssetPath);
+            if (!File.Exists(assetPath))
+            {
+                string resourcePath = Path.Combine(dataRoot, "Resources", relativeAssetPath);
+                if (File.Exists(resourcePath)) assetPath = resourcePath;
+            }
             var manager = new AssetsManager();
             try
             {

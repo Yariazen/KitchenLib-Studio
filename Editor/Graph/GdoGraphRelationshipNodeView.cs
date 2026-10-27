@@ -29,7 +29,7 @@ namespace KitchenLib.Studio.Editor.Graph
         private bool _lastBodyVisible;
 
         public GdoGraphRelationshipNodeView(GdoGraphRelationshipRecord record, GdoBundleGraphAsset graph,
-            Action structureChanged = null, Action removeRelationship = null,
+            Action<GdoRelationshipEditKind> changed = null, Action removeRelationship = null,
             Action<int> moveRelationship = null, Func<int, bool> canMoveRelationship = null,
             Action<bool> expandedChanged = null)
         {
@@ -71,10 +71,10 @@ namespace KitchenLib.Studio.Editor.Graph
                     _descriptor = first.RootValue.Kind == "List" ||
                         first.RootValue.Kind == "Array" || first.RootValue.Kind == "Set" ? first.RootValue.Element : first.RootValue;
                     RebuildReferencePorts();
-                    EditorBody = new GdoGraphRelationshipNodeEditorElement(graph, record, _descriptor, () =>
+                    EditorBody = new GdoGraphRelationshipNodeEditorElement(graph, record, _descriptor, editKind =>
                     {
-                        RebuildReferencePorts();
-                        structureChanged?.Invoke();
+                        if (editKind == GdoRelationshipEditKind.PortTopology) RebuildReferencePorts();
+                        changed?.Invoke(editKind);
                     });
                     extensionContainer.Add(EditorBody);
                 }
