@@ -34,6 +34,14 @@ namespace KitchenLib.Studio.Editor.Graph
                 if (record.Material == null) issues.Add(Issue(record.Id, "Existing Material is not assigned."));
                 return issues;
             }
+            string ownedPath = AssetPath(graph, record);
+            UnityEngine.Object occupant = AssetDatabase.LoadMainAssetAtPath(ownedPath);
+            if (occupant != null && !IsOwned(graph, record, ownedPath))
+            {
+                issues.Add(Issue(record.Id, "Asset at generated material path is not owned by this prefab: '" +
+                    ownedPath + "'. Move or rename that asset before generating the material."));
+                return issues;
+            }
             Shader shader = ConfiguredShader(record);
             if (shader == null)
             {
@@ -68,6 +76,8 @@ namespace KitchenLib.Studio.Editor.Graph
             {
                 material = new Material(shader) { name = record.DisplayName + " Material" };
                 AssetDatabase.CreateAsset(material, path);
+                MarkOwned(graph, record, path);
+                material = AssetDatabase.LoadAssetAtPath<Material>(path);
             }
             else material.shader = shader;
             material.SetColor(record.ColorPropertyName, record.MaterialColor);
@@ -75,10 +85,37 @@ namespace KitchenLib.Studio.Editor.Graph
             return material;
         }
 
-        public static void DeleteOwned(GdoBundleGraphAsset graph, GdoGraphPrefabRecord record)
+        public static bool DeleteOwned(GdoBundleGraphAsset graph, GdoGraphPrefabRecord record)
         {
             string path = AssetPath(graph, record);
-            if (AssetDatabase.LoadMainAssetAtPath(path) != null) AssetDatabase.DeleteAsset(path);
+            UnityEngine.Object asset = AssetDatabase.LoadMainAssetAtPath(path);
+            if (asset == null) return true;
+            if (!IsOwned(graph, record, path)) return false;
+            Undo.DestroyObjectImmediate(asset);
+            return AssetDatabase.LoadMainAssetAtPath(path) == null;
+        }
+
+        private static bool IsOwned(GdoBundleGraphAsset graph, GdoGraphPrefabRecord record, string path)
+        {
+            AssetImporter importer = AssetImporter.GetAtPath(path);
+            return importer != null && string.Equals(importer.userData, OwnershipMarker(graph, record),
+                StringComparison.Ordinal);
+        }
+
+        private static void MarkOwned(GdoBundleGraphAsset graph, GdoGraphPrefabRecord record, string path)
+        {
+            AssetImporter importer = AssetImporter.GetAtPath(path);
+            if (importer == null) throw new InvalidOperationException("Unity did not create a material importer for '" + path + "'.");
+            importer.userData = OwnershipMarker(graph, record);
+            importer.SaveAndReimport();
+        }
+
+        private static string OwnershipMarker(GdoBundleGraphAsset graph, GdoGraphPrefabRecord record)
+        {
+            string graphGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(graph));
+            if (string.IsNullOrEmpty(graphGuid))
+                throw new ArgumentException("Project graph must be saved before generating materials.", nameof(graph));
+            return "KitchenLibStudio.GeneratedMaterial|" + graphGuid + "|" + record.Id;
         }
 
         private static Shader ConfiguredShader(GdoGraphPrefabRecord record) =>
