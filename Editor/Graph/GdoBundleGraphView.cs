@@ -104,13 +104,9 @@ namespace KitchenLib.Studio.Editor.Graph
 
             bool hasGraph = _graph != null;
             bool canCreate = hasGraph && _graph.HasAuthorIdentity;
-            foreach (GdoCreateMenuEntry entry in GdoCreateMenuCatalog.Build(
-                GdoGraphAssetCommands.SupportedRuntimeTypes))
-            {
-                string captured = entry.RuntimeTypeName;
-                evt.menu.AppendAction("Create GDO/" + entry.MenuPath, _ => _createGdo?.Invoke(captured),
-                    _ => canCreate && _createGdo != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
-            }
+            GdoCreateMenuPresenter.Populate(evt.menu, "Create GDO/",
+                GdoCreateMenuCatalog.Build(GdoGraphAssetCommands.SupportedRuntimeTypes),
+                value => _createGdo?.Invoke(value), () => canCreate && _createGdo != null);
             evt.menu.AppendAction("Add Selected GDO", _ => _addSelected?.Invoke(),
                 _ => hasGraph && _addSelected != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             evt.menu.AppendAction("External Reference…", _ => _addExternal?.Invoke(),
