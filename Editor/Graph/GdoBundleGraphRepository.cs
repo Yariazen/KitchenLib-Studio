@@ -155,6 +155,21 @@ namespace KitchenLib.Studio.Editor.Graph
             Dirty(graph);
         }
 
+        public static void ConfigurePrefabMaterial(GdoBundleGraphAsset graph, string prefabId,
+            GdoGraphPrefabMaterialMode materialMode, Material material,
+            GdoGraphPrefabShaderMode shaderMode, Shader customShader, Color color, string colorPropertyName)
+        {
+            GdoGraphPrefabRecord prefab = RequirePrefab(graph, prefabId);
+            if (materialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                string.IsNullOrWhiteSpace(colorPropertyName))
+                throw new ArgumentException("Color property name is required for a generated material.",
+                    nameof(colorPropertyName));
+            Record(graph, "Configure prefab material");
+            prefab.ConfigureMaterial(materialMode, material, shaderMode, customShader, color,
+                string.IsNullOrWhiteSpace(colorPropertyName) ? "_Color" : colorPropertyName.Trim());
+            Dirty(graph);
+        }
+
         public static void SetPrefabSourceMode(GdoBundleGraphAsset graph, string prefabId,
             GdoGraphPrefabSourceMode mode)
         {
