@@ -22,6 +22,8 @@ namespace KitchenLib.Studio.Editor.Bootstrap
         public static string VanillaGdoCatalogPath => GeneratedFilePath(VanillaGdoCatalogFileName);
         public static string VanillaSnapshotCatalogPath => GeneratedFilePath(VanillaSnapshotCatalogFileName);
         public static string VanillaSnapshotIndexPath => GeneratedFilePath(VanillaSnapshotIndexFileName);
+        public static string SnapshotCacheRoot => Path.Combine(StateDirectory, "Snapshots");
+        public static string CatalogueStagingRoot => Path.Combine(StateDirectory, "CatalogueStaging");
 
         public static string GeneratedAssetPath(string relativePath) => AssetRoot + "/" + NormalizeRelative(relativePath);
         public static string GeneratedFilePath(string relativePath) => Path.Combine(AssetDirectory,

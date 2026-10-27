@@ -32,6 +32,7 @@ namespace KitchenLib.Studio.Editor.Graph
         private bool _snapshotVisibilityScheduled;
         private int _snapshotGeneration;
         private bool _edgeGeometryRefreshScheduled;
+        private bool _catalogSubscribed;
         private readonly Action<string> _createGdo;
         private readonly Action _addSelected;
         private readonly Action _addExternal;
@@ -80,6 +81,9 @@ namespace KitchenLib.Studio.Editor.Graph
             RegisterCallback<ContextualMenuPopulateEvent>(RouteOwnerGroupContextMenu,
                 TrickleDown.TrickleDown);
             RegisterCallback<ContextualMenuPopulateEvent>(BuildCanvasContextMenu);
+            RegisterCallback<AttachToPanelEvent>(_ => SubscribeToCatalogChanges());
+            RegisterCallback<DetachFromPanelEvent>(_ => UnsubscribeFromCatalogChanges());
+            SubscribeToCatalogChanges();
             RegisterCallback<GeometryChangedEvent>(_ =>
             {
                 ScheduleVisibleExternalSnapshots();
@@ -306,6 +310,27 @@ namespace KitchenLib.Studio.Editor.Graph
             _snapshotService?.Dispose();
             _snapshotService = null;
             _snapshotVisibilityScheduled = false;
+        }
+
+        internal void RefreshSnapshotServiceForCatalogChange()
+        {
+            DisposeSnapshotThumbnails();
+            ScheduleVisibleExternalSnapshots();
+        }
+
+        private void SubscribeToCatalogChanges()
+        {
+            if (_catalogSubscribed) return;
+            PlateUpCatalogImportController.CatalogChanged += RefreshSnapshotServiceForCatalogChange;
+            _catalogSubscribed = true;
+        }
+
+        private void UnsubscribeFromCatalogChanges()
+        {
+            if (!_catalogSubscribed) return;
+            PlateUpCatalogImportController.CatalogChanged -= RefreshSnapshotServiceForCatalogChange;
+            _catalogSubscribed = false;
+            DisposeSnapshotThumbnails();
         }
 
         private void ScheduleVisibleExternalSnapshots()

@@ -12,8 +12,7 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         {
             KitchenLibStudioCatalogueBridge.Register(installation =>
             {
-                PlateUpCatalogImportController.ImportGdoBatch(installation, CancellationToken.None);
-                PlateUpCatalogImportController.ImportSnapshotBatch(installation, CancellationToken.None);
+                PlateUpCatalogImportController.ImportCombinedBatch(installation, CancellationToken.None);
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
             });
         }

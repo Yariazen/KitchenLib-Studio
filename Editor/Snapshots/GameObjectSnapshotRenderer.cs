@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace KitchenLib.Studio.Editor.Snapshots
 {
+    internal sealed class SnapshotSubjectUnsupportedException : InvalidOperationException
+    {
+        public SnapshotSubjectUnsupportedException(string message) : base(message) { }
+    }
+
     internal sealed class SnapshotRenderOptions
     {
         public SnapshotRenderOptions(int width, int height) { Width = width; Height = height; }
@@ -29,7 +34,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             Renderer[] renderers = source.GetComponentsInChildren<Renderer>(false).Where(value => value.enabled).ToArray();
-            if (renderers.Length == 0) throw new InvalidOperationException("Snapshot subject has no visible renderers.");
+            if (renderers.Length == 0) throw new SnapshotSubjectUnsupportedException(
+                "Snapshot subject has no visible renderers.");
             Bounds bounds = renderers[0].bounds;
             for (int index = 1; index < renderers.Length; index++) bounds.Encapsulate(renderers[index].bounds);
             var preview = new PreviewRenderUtility();
