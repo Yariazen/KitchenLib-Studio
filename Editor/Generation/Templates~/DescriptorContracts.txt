@@ -15,11 +15,11 @@
     }
     public sealed class GdoFieldDescriptorData
     {
-        public readonly string DeclaringTypeName, Name, Classification;
+        public readonly string DeclaringTypeName, Name, Classification, AuthoringStorage, SerializedPropertyPath;
         public readonly bool IsRequired;
         public readonly GdoValueDescriptorData Value;
-        public GdoFieldDescriptorData(string declaringTypeName, string name, string classification, bool isRequired, GdoValueDescriptorData value)
-        { DeclaringTypeName = declaringTypeName; Name = name; Classification = classification; IsRequired = isRequired; Value = value; }
+        public GdoFieldDescriptorData(string declaringTypeName, string name, string classification, string authoringStorage, string serializedPropertyPath, bool isRequired, GdoValueDescriptorData value)
+        { DeclaringTypeName = declaringTypeName; Name = name; Classification = classification; AuthoringStorage = authoringStorage; SerializedPropertyPath = serializedPropertyPath; IsRequired = isRequired; Value = value; }
     }
     public sealed class GdoDiagnosticData
     {
