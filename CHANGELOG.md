@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.0-alpha.3]
+
+This release supersedes the failed `0.1.0-alpha.2` automation candidate and includes its user-facing changes.
+
+- Automatically discover a standard PlateUp installation when the studio has already detected it.
+- Group related GDO types into submenus in the create menu.
+- Always confirm graph-first GDO deletion and delete its generated asset with the node.
+- Add intuitive material authoring for generated prefabs, including vanilla and custom shaders/materials.
+- Accept conventional lightweight or annotated release tags while still requiring the tagged commit to belong to `main`.
+
 ## [0.1.0-alpha.2]
 
 - Add graph material authoring for primitive prefabs with lit and flat/unlit presets, custom Material passthrough, custom Shader support, color-property validation, and safely owned generated `.mat` assets.
@@ -24,4 +34,4 @@
 - Pin and acknowledge the exact AssetRipper type-tree data provenance used by the internal alpha.
 - Show a non-blocking type-tree attribution notice in KitchenLib Studio Setup.
 
-Current alpha label: `0.1.0-alpha.2`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.
+Current alpha label: `0.1.0-alpha.3`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.
