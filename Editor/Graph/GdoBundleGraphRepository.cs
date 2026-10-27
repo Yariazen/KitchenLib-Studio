@@ -164,6 +164,9 @@ namespace KitchenLib.Studio.Editor.Graph
                 string.IsNullOrWhiteSpace(colorPropertyName))
                 throw new ArgumentException("Color property name is required for a generated material.",
                     nameof(colorPropertyName));
+            if (prefab.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                materialMode != GdoGraphPrefabMaterialMode.GeneratedMaterial)
+                GdoGraphMaterialResolver.DeleteOwned(graph, prefab);
             Record(graph, "Configure prefab material");
             prefab.ConfigureMaterial(materialMode, material, shaderMode, customShader, color,
                 string.IsNullOrWhiteSpace(colorPropertyName) ? "_Color" : colorPropertyName.Trim());
@@ -197,6 +200,7 @@ namespace KitchenLib.Studio.Editor.Graph
             foreach (GdoGraphEdgeRecord edge in graph.Edges
                 .Where(value => value.InputNodeId == prefabId || value.OutputNodeId == prefabId).ToArray())
                 graph.RemoveEdge(edge.Id);
+            GdoGraphMaterialResolver.DeleteOwned(graph, prefab);
             graph.RemovePrefab(prefabId);
             Dirty(graph);
         }
