@@ -313,11 +313,15 @@ namespace KitchenLib.Studio.Editor.Bootstrap
                     interfaces = type.Interfaces.Select(item => RuntimeName(item.InterfaceType)).OrderBy(name => name, StringComparer.Ordinal).ToArray(),
                     serializationAttributes = Attributes(type), enumValues = EnumValues(type),
                     fields = PlateUpMirrorModel.Fields(type).Select(field => {
-                        ValueSchema value = Describe(field.FieldType, new HashSet<string>(StringComparer.Ordinal));
+                        bool managedReference = PlateUpMirrorModel.HasAttribute(field, "UnityEngine.SerializeReference");
+                        bool unityEligible = PlateUpMirrorModel.UnityFieldSerializationEligibility(field);
+                        ValueSchema value = managedReference
+                            ? new ValueSchema { runtimeTypeName = RuntimeName(field.FieldType),
+                                kind = unityEligible ? "ManagedReference" : "Unsupported" }
+                            : Describe(field.FieldType, new HashSet<string>(StringComparer.Ordinal));
                         bool unsupported = Contains(value, "Unsupported");
                         bool linked = Contains(value, "GdoReference");
-                        bool managedReference = PlateUpMirrorModel.HasAttribute(field, "UnityEngine.SerializeReference");
-                        bool native = !unsupported && !linked && PlateUpMirrorModel.UnityFieldSerializationEligibility(field);
+                        bool native = !unsupported && !linked && unityEligible;
                         bool sidecar = !managedReference && !unsupported && value.kind != "UnityObject";
                         return new FieldSchema { name = field.Name, runtimeTypeName = RuntimeName(field.FieldType), visibility = field.IsPublic ? "Public" : "Private",
                             isNonSerialized = field.IsNotSerialized, isReadonly = field.IsInitOnly, serializationAttributes = Attributes(field), value = value,
