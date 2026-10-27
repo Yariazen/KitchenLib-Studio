@@ -1,0 +1,130 @@
+name: Draft release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  package-release:
+    name: Verify and package tagged release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        shell: pwsh
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
+      - name: Verify package boundary and licenses
+        shell: pwsh
+        run: ./Tools~/Verify-Package.ps1
+      - name: Build archive, checksum, and release notes
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $name = "com.kitchenlib.studio-$version.zip"
+          $archive = Join-Path $env:RUNNER_TEMP $name
+          ./Tools~/New-ReleaseArchive.ps1 -PackageRoot $PWD -DestinationPath $archive
+          $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archive).Hash.ToLowerInvariant()
+          $checksum = Join-Path $env:RUNNER_TEMP "$name.sha256"
+          [IO.File]::WriteAllText($checksum, "$hash  $name`n", [Text.UTF8Encoding]::new($false))
+          $written = (Get-Content -Raw $checksum).Split(' ', [StringSplitOptions]::RemoveEmptyEntries)[0]
+          if ($written -cne $hash) { throw 'Generated checksum does not match the release archive.' }
+          ./Tools~/Get-ReleaseNotes.ps1 -ChangelogPath CHANGELOG.md -Version $version `
+            -DestinationPath (Join-Path $env:RUNNER_TEMP 'release-notes.md')
+      - name: Reject forbidden archive content
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $archivePath = Join-Path $env:RUNNER_TEMP "com.kitchenlib.studio-$version.zip"
+          $archive = [IO.Compression.ZipFile]::OpenRead($archivePath)
+          try {
+            $forbidden = @($archive.Entries | ForEach-Object { $_.FullName.Replace('\', '/') } | Where-Object {
+              $_ -match '^(?:\.github/|Tools~/|\.git/|Tests?/|Library/|Assets/KitchenLibStudio\.Generated/)' -or
+              $_ -match '(?i)(?:^|/)(?:logs?|temp|obj)(?:/|$)'
+            })
+          }
+          finally { $archive.Dispose() }
+          if ($forbidden.Count) { throw "Forbidden release archive entries: $($forbidden -join ', ')" }
+      - name: Upload release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            ${{ runner.temp }}/com.kitchenlib.studio-*.zip
+            ${{ runner.temp }}/com.kitchenlib.studio-*.zip.sha256
+            ${{ runner.temp }}/release-notes.md
+          if-no-files-found: error
+
+  unity-import:
+    name: Unity 2020.3 tagged clean import
+    runs-on: [self-hosted, unity-2020.3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate release tag
+        shell: pwsh
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
+      - name: Verify clean local-package import
+        shell: pwsh
+        env:
+          UNITY_PATH: ${{ vars.UNITY_2020_3_PATH }}
+        run: ./Tools~/Verify-CleanUnityImport.ps1 -PackageRoot $PWD -UnityPath $env:UNITY_PATH
+
+  draft-release:
+    name: Create draft GitHub prerelease
+    needs: [package-release, unity-import]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download verified release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ${{ runner.temp }}/release-files
+      - name: Revalidate tag and checksum
+        shell: pwsh
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          ./Tools~/Verify-ReleaseTag.ps1 -PackageRoot $PWD -Tag $env:GITHUB_REF_NAME `
+            -RequireMainProvenance -MainRef origin/main -ExpectedCommit $env:GITHUB_SHA
+          $directory = Join-Path $env:RUNNER_TEMP 'release-files'
+          $zip = @(Get-ChildItem -LiteralPath $directory -Filter '*.zip')
+          $checksum = @(Get-ChildItem -LiteralPath $directory -Filter '*.zip.sha256')
+          if ($zip.Count -ne 1 -or $checksum.Count -ne 1) { throw 'Expected exactly one ZIP and one checksum file.' }
+          if ($checksum[0].Name -cne ($zip[0].Name + '.sha256')) { throw 'Checksum filename does not match the ZIP filename.' }
+          $line = Get-Content -Raw $checksum[0].FullName
+          $parsed = [regex]::Match($line, '\A(?<hash>[0-9a-f]{64})  (?<file>[^\r\n]+)\r?\n?\z')
+          if (-not $parsed.Success) { throw 'Checksum file must contain one conventional SHA-256 line.' }
+          if ($parsed.Groups['file'].Value -cne $zip[0].Name) { throw 'Checksum line does not name the ZIP.' }
+          $expected = $parsed.Groups['hash'].Value
+          $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip[0].FullName).Hash.ToLowerInvariant()
+          if ($expected -cne $actual) { throw 'Downloaded release checksum does not match the ZIP.' }
+      - name: Create draft prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP 'release-files'
+          $zip = (Get-ChildItem -LiteralPath $directory -Filter '*.zip').FullName
+          $checksum = (Get-ChildItem -LiteralPath $directory -Filter '*.zip.sha256').FullName
+          $notes = Join-Path $directory 'release-notes.md'
+          gh release create $env:GITHUB_REF_NAME --repo $env:GITHUB_REPOSITORY `
+            --verify-tag --target $env:GITHUB_SHA --draft --prerelease `
+            --title "KitchenLib Studio $env:GITHUB_REF_NAME" --notes-file $notes $zip $checksum

@@ -1,13 +1,13 @@
 # KitchenLib Studio
 
-KitchenLib Studio is a Unity Editor package for authoring PlateUp game data and building mod AssetBundles. This `0.1.0-alpha.1` package targets Unity 2020.3 and the latest PlateUp Steam build tested for this alpha. PlateUp is installed separately; the package does not contain game assemblies or game data.
+KitchenLib Studio is a Unity Editor package for authoring PlateUp game data and building mod AssetBundles. This `0.1.0-alpha.2` package targets Unity 2020.3 and the latest PlateUp Steam build tested for this alpha. PlateUp is installed separately; the package does not contain game assemblies or game data.
 
 ## Install
 
 Use Unity 2020.3.48f1 for this alpha. Open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter:
 
 ```text
-https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.1
+https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.2
 ```
 
 For a local checkout, choose **+ → Add package from disk** and select the checkout's root `package.json`.

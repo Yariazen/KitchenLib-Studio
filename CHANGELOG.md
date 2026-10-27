@@ -1,11 +1,14 @@
 # Changelog
 
-## [0.1.0-alpha.1]
+## [0.1.0-alpha.2]
 
 - Add graph material authoring for primitive prefabs with lit and flat/unlit presets, custom Material passthrough, custom Shader support, color-property validation, and safely owned generated `.mat` assets.
 - Group Create GDO entries into deterministic inheritance-based submenus while keeping every creatable generated type reachable.
 - Make the graph authoritative for local GDO deletion: always confirm, then atomically remove the local graph record, relationships, connected edges, owned GDO asset, and companion while keeping external references graph-only.
 - Automatically select and remember a valid standard or uniquely discovered PlateUp Steam installation before offering manual folder selection.
+
+## [0.1.0-alpha.1]
+
 - Add root onboarding, manual zip installation guidance, and a maintainer release process for the alpha candidate. Require the README in the package gate and release archive, and check its pinned Git installation URL against package metadata.
 - Harden public-surface auditing across conditional configurations, case-sensitive qualified names and all non-template C# source locations. Scope build saves to product assets so unrelated dirty work remains unsaved, and preserve accepted scalar semantic kinds between pre-build processors.
 - Finalize the editor-only API with explicit `RegisterBuildProcessor` registration, captured namespaced IDs/orders, ordinal duplicate rejection and deterministic execution. Add immutable `IStudioBuildProcessor`, `StudioBuildContext`, `StudioBuildFieldChange` and `StudioBuildProcessorResult` contracts for build-only replacement of existing scalar companion fields. Contexts/results are bounded, processor failures are isolated, authored state is restored, and original/transformed manifest validation, package audit and final bundle verification remain mandatory. Exact supported shapes, limits and lifecycle behavior are documented in the authoring reference under the existing `0.x` compatibility policy.
@@ -21,4 +24,4 @@
 - Pin and acknowledge the exact AssetRipper type-tree data provenance used by the internal alpha.
 - Show a non-blocking type-tree attribution notice in KitchenLib Studio Setup.
 
-Internal alpha label: `0.1.0-alpha.1`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. No public tag or archive is authorized.
+Current alpha label: `0.1.0-alpha.2`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.
