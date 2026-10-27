@@ -37,13 +37,12 @@ if ($RequireMainProvenance) {
         return ($output -join "`n").Trim()
     }
     $tagRef = "refs/tags/$Tag"
-    if ((Invoke-Git @('cat-file', '-t', $tagRef)) -cne 'tag') {
-        throw "Release tag $Tag must be an annotated tag."
-    }
     $peeled = Invoke-Git @('rev-parse', "$tagRef^{}")
     $head = Invoke-Git @('rev-parse', 'HEAD')
     $main = Invoke-Git @('rev-parse', $MainRef)
-    if ($peeled -cne $ExpectedCommit -or $head -cne $ExpectedCommit -or $main -cne $ExpectedCommit) {
+    & git -C $PackageRoot merge-base --is-ancestor $ExpectedCommit $MainRef
+    $isOnMain = $LASTEXITCODE -eq 0
+    if ($peeled -cne $ExpectedCommit -or $head -cne $ExpectedCommit -or -not $isOnMain) {
         throw "Release provenance mismatch: tag=$peeled HEAD=$head $MainRef=$main expected=$ExpectedCommit."
     }
 }

@@ -19,12 +19,12 @@ jobs:
         run: ./Tools~/Verify-Package.ps1
       - name: Build allowlisted release archive
         shell: pwsh
-        run: ./Tools~/New-ReleaseArchive.ps1 -PackageRoot $PWD -DestinationPath (Join-Path $env:RUNNER_TEMP 'com.kitchenlib.studio-0.1.0-alpha.2.zip')
+        run: ./Tools~/New-ReleaseArchive.ps1 -PackageRoot $PWD -DestinationPath (Join-Path $env:RUNNER_TEMP 'com.kitchenlib.studio-0.1.0-alpha.3.zip')
       - name: Upload verified release archive
         uses: actions/upload-artifact@v4
         with:
-          name: com.kitchenlib.studio-0.1.0-alpha.2
-          path: ${{ runner.temp }}/com.kitchenlib.studio-0.1.0-alpha.2.zip
+          name: com.kitchenlib.studio-0.1.0-alpha.3
+          path: ${{ runner.temp }}/com.kitchenlib.studio-0.1.0-alpha.3.zip
           if-no-files-found: error
 
   unity-import:
