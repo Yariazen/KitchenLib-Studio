@@ -28,6 +28,11 @@ namespace KitchenLib.Studio.Editor.Graph
     {
         internal static IReadOnlyList<GdoCreateMenuPresentation> Describe(
             IReadOnlyList<GdoCreateMenuEntry> entries, string prefix, Action<string> selected, Func<bool> enabled)
+            => DescribeAt(entries, prefix, Vector2.zero, (runtimeType, _) => selected(runtimeType), enabled);
+
+        internal static IReadOnlyList<GdoCreateMenuPresentation> DescribeAt(
+            IReadOnlyList<GdoCreateMenuEntry> entries, string prefix, Vector2 position,
+            Action<string, Vector2> selected, Func<bool> enabled)
         {
             if (entries == null) throw new ArgumentNullException(nameof(entries));
             if (selected == null) throw new ArgumentNullException(nameof(selected));
@@ -41,7 +46,7 @@ namespace KitchenLib.Studio.Editor.Graph
                 items[index] = new GdoCreateMenuPresentation(
                     (prefix ?? string.Empty) + entry.MenuPath,
                     runtimeTypeName,
-                    () => selected(runtimeTypeName),
+                    () => selected(runtimeTypeName, position),
                     enabled);
             }
             return items;
@@ -49,17 +54,26 @@ namespace KitchenLib.Studio.Editor.Graph
 
         public static void Populate(GenericMenu menu, IReadOnlyList<GdoCreateMenuEntry> entries,
             Action<string> selected)
+            => Populate(menu, entries, new Vector2(40f, 40f), (runtimeType, _) => selected(runtimeType));
+
+        public static void Populate(GenericMenu menu, IReadOnlyList<GdoCreateMenuEntry> entries,
+            Vector2 position, Action<string, Vector2> selected)
         {
             if (menu == null) throw new ArgumentNullException(nameof(menu));
-            foreach (GdoCreateMenuPresentation item in Describe(entries, string.Empty, selected, () => true))
+            foreach (GdoCreateMenuPresentation item in DescribeAt(entries, string.Empty, position, selected, () => true))
                 menu.AddItem(new GUIContent(item.Path), false, () => item.Select());
         }
 
         public static void Populate(DropdownMenu menu, string prefix, IReadOnlyList<GdoCreateMenuEntry> entries,
             Action<string> selected, Func<bool> enabled)
+            => Populate(menu, prefix, entries, Vector2.zero,
+                (runtimeType, _) => selected(runtimeType), enabled);
+
+        public static void Populate(DropdownMenu menu, string prefix, IReadOnlyList<GdoCreateMenuEntry> entries,
+            Vector2 position, Action<string, Vector2> selected, Func<bool> enabled)
         {
             if (menu == null) throw new ArgumentNullException(nameof(menu));
-            foreach (GdoCreateMenuPresentation item in Describe(entries, prefix, selected, enabled))
+            foreach (GdoCreateMenuPresentation item in DescribeAt(entries, prefix, position, selected, enabled))
                 menu.AppendAction(item.Path, _ => item.Select(),
                     _ => item.Enabled ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
         }
