@@ -26,7 +26,6 @@ if ([System.IO.Path]::GetExtension($DestinationPath) -cne '.zip') {
 }
 if (Test-Path -LiteralPath $DestinationPath) {
     if (-not $Force) { throw "DestinationPath already exists: $DestinationPath" }
-    Remove-Item -LiteralPath $DestinationPath -Force
 }
 if (-not (Test-Path -LiteralPath $destinationParent -PathType Container)) {
     New-Item -ItemType Directory -Path $destinationParent -Force | Out-Null
@@ -80,6 +79,8 @@ if (-not ($packageFiles | Where-Object { $_.Relative.StartsWith('Editor/', [Syst
 }
 
 $stagingRoot = Join-Path ([System.IO.Path]::GetTempPath()) ('KitchenLibStudio-Release-' + [System.Guid]::NewGuid().ToString('N'))
+$temporaryArchive = Join-Path $destinationParent ('.' + [IO.Path]::GetFileName($DestinationPath) + '.' +
+    [Guid]::NewGuid().ToString('N') + '.tmp')
 try {
     New-Item -ItemType Directory -Path $stagingRoot | Out-Null
     foreach ($file in $packageFiles) {
@@ -93,7 +94,7 @@ try {
 
     Add-Type -AssemblyName System.IO.Compression
     $fixedTimestamp = [DateTimeOffset]::new(1980, 1, 1, 0, 0, 0, [TimeSpan]::Zero)
-    $archiveStream = [IO.File]::Open($DestinationPath, [IO.FileMode]::CreateNew,
+    $archiveStream = [IO.File]::Open($temporaryArchive, [IO.FileMode]::CreateNew,
         [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
     try {
         $deterministicArchive = [IO.Compression.ZipArchive]::new(
@@ -115,8 +116,10 @@ try {
     }
     finally { $archiveStream.Dispose() }
 
+    & (Join-Path $PackageRoot 'Tools~/Set-DeterministicZipMetadata.ps1') -Path $temporaryArchive | Write-Output
+
     Add-Type -AssemblyName System.IO.Compression.FileSystem
-    $archive = [System.IO.Compression.ZipFile]::OpenRead($DestinationPath)
+    $archive = [System.IO.Compression.ZipFile]::OpenRead($temporaryArchive)
     try {
         $actualEntries = @($archive.Entries | Where-Object { -not [string]::IsNullOrEmpty($_.Name) } | ForEach-Object {
             $_.FullName.Replace('\', '/')
@@ -129,8 +132,12 @@ try {
     if (($actualEntries -join '|') -cne ($expectedEntries -join '|')) {
         throw 'Release archive entries differ from the explicit package allowlist.'
     }
+    [IO.File]::Move($temporaryArchive, $DestinationPath, $true)
 }
 finally {
+    if (Test-Path -LiteralPath $temporaryArchive) {
+        Remove-Item -LiteralPath $temporaryArchive -Force
+    }
     if (Test-Path -LiteralPath $stagingRoot) {
         Remove-Item -LiteralPath $stagingRoot -Recurse -Force
     }
