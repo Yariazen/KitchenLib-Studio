@@ -155,6 +155,25 @@ namespace KitchenLib.Studio.Editor.Graph
             Dirty(graph);
         }
 
+        public static void ConfigurePrefabMaterial(GdoBundleGraphAsset graph, string prefabId,
+            GdoGraphPrefabMaterialMode materialMode, Material material,
+            GdoGraphPrefabShaderMode shaderMode, Shader customShader, Color color, string colorPropertyName)
+        {
+            GdoGraphPrefabRecord prefab = RequirePrefab(graph, prefabId);
+            if (materialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                string.IsNullOrWhiteSpace(colorPropertyName))
+                throw new ArgumentException("Color property name is required for a generated material.",
+                    nameof(colorPropertyName));
+            Record(graph, "Configure prefab material");
+            if (prefab.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                materialMode != GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                !GdoGraphMaterialResolver.DeleteOwned(graph, prefab))
+                throw new InvalidOperationException("Refused to delete a material that is not owned by this prefab.");
+            prefab.ConfigureMaterial(materialMode, material, shaderMode, customShader, color,
+                string.IsNullOrWhiteSpace(colorPropertyName) ? "_Color" : colorPropertyName.Trim());
+            Dirty(graph);
+        }
+
         public static void SetPrefabSourceMode(GdoBundleGraphAsset graph, string prefabId,
             GdoGraphPrefabSourceMode mode)
         {
@@ -179,6 +198,9 @@ namespace KitchenLib.Studio.Editor.Graph
             if (graph.HasConnections(prefab.Id) && !removeConnectedEdges)
                 throw new InvalidOperationException("Explicitly allow removing connected edges before removing this prefab.");
             Record(graph, "Remove prefab graph node");
+            if (prefab.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial &&
+                !GdoGraphMaterialResolver.DeleteOwned(graph, prefab))
+                throw new InvalidOperationException("Refused to delete a material that is not owned by this prefab.");
             foreach (GdoGraphEdgeRecord edge in graph.Edges
                 .Where(value => value.InputNodeId == prefabId || value.OutputNodeId == prefabId).ToArray())
                 graph.RemoveEdge(edge.Id);

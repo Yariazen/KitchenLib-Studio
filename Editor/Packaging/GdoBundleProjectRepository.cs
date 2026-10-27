@@ -383,6 +383,7 @@ namespace KitchenLib.Studio.Editor.Packaging
         public static string GdoFolder(GdoBundleGraphAsset graph) => ProjectFolder(graph) + "/GDOs";
         public static string ContentFolder(GdoBundleGraphAsset graph) => ProjectFolder(graph) + "/Content";
         public static string PrefabFolder(GdoBundleGraphAsset graph) => ProjectFolder(graph) + "/Prefabs";
+        public static string MaterialFolder(GdoBundleGraphAsset graph) => ProjectFolder(graph) + "/Materials";
 
         public static IReadOnlyList<GdoGraphDiagnostic> ValidateLayout(GdoBundleGraphAsset graph)
         {

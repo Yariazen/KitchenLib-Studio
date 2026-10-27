@@ -286,19 +286,24 @@ namespace KitchenLib.Studio.Editor.Packaging
             Capture(graph);
             foreach (GdoGraphPrefabRecord prefab in graph.Prefabs.Where(item => item.SourceMode == GdoGraphPrefabSourceMode.Primitive))
             {
-                string path = GdoGraphPrefabResolver.PrimitiveAssetPath(graph, prefab);
-                TrackFolders(path);
-                byte[] bytes = File.Exists(path) ? File.ReadAllBytes(path) : null;
-                restore.Insert(0, () =>
-                {
-                    if (bytes == null) { if (AssetDatabase.LoadMainAssetAtPath(path) != null) AssetDatabase.DeleteAsset(path); }
-                    else if (!File.ReadAllBytes(path).SequenceEqual(bytes))
-                    {
-                        File.WriteAllBytes(path, bytes);
-                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
-                    }
-                });
+                CaptureGeneratedFile(GdoGraphPrefabResolver.PrimitiveAssetPath(graph, prefab));
+                if (prefab.MaterialMode == GdoGraphPrefabMaterialMode.GeneratedMaterial)
+                    CaptureGeneratedFile(GdoGraphMaterialResolver.AssetPath(graph, prefab));
             }
+        }
+        private void CaptureGeneratedFile(string path)
+        {
+            TrackFolders(path);
+            byte[] bytes = File.Exists(path) ? File.ReadAllBytes(path) : null;
+            restore.Insert(0, () =>
+            {
+                if (bytes == null) { if (AssetDatabase.LoadMainAssetAtPath(path) != null) AssetDatabase.DeleteAsset(path); }
+                else if (!File.ReadAllBytes(path).SequenceEqual(bytes))
+                {
+                    File.WriteAllBytes(path, bytes);
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+                }
+            });
         }
         private void TrackFolders(string path)
         {

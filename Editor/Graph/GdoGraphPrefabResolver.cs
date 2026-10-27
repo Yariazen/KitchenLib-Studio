@@ -39,11 +39,9 @@ namespace KitchenLib.Studio.Editor.Graph
                     Collider collider = instance.GetComponent<Collider>();
                     if (collider != null) UnityEngine.Object.DestroyImmediate(collider);
                 }
-                if (record.Material != null)
-                {
-                    Renderer renderer = instance.GetComponent<Renderer>();
-                    if (renderer != null) renderer.sharedMaterial = record.Material;
-                }
+                Material material = GdoGraphMaterialResolver.Resolve(graph, record);
+                Renderer renderer = instance.GetComponent<Renderer>();
+                if (renderer != null) renderer.sharedMaterial = material;
                 string path = PrimitiveAssetPath(graph, record);
                 GameObject saved = PrefabUtility.SaveAsPrefabAsset(instance, path);
                 if (saved == null) throw new InvalidOperationException("Unity could not save the generated primitive prefab.");
@@ -65,6 +63,7 @@ namespace KitchenLib.Studio.Editor.Graph
             {
                 if (record.Scale.x <= 0 || record.Scale.y <= 0 || record.Scale.z <= 0)
                     issues.Add(Issue(record.Id, "Primitive scale components must be greater than zero."));
+                issues.AddRange(GdoGraphMaterialResolver.Validate(graph, record));
                 return issues;
             }
             string path = AssetDatabase.GUIDToAssetPath(record.WorkspacePrefabGuid);
