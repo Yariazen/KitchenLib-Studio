@@ -127,10 +127,19 @@ namespace KitchenLib.Studio.Editor.Snapshots
         {
             string key = Identity(external.file, external.info.PathId);
             if (context.MeshIndexes.TryGetValue(key, out int existing)) return existing;
-            int index = context.Meshes.Count; context.MeshIndexes.Add(key, index);
-            context.Meshes.Add(PlateUpMeshDecoder.DecodeInstalled(context.GameRoot,
-                Path.GetFileName(external.file.path), external.info.PathId, context.Token, context.ClassDataPath));
-            return index;
+            try
+            {
+                int index = context.Meshes.Count; context.MeshIndexes.Add(key, index);
+                context.Meshes.Add(PlateUpMeshDecoder.DecodeInstalled(context.GameRoot,
+                    Path.GetFileName(external.file.path), external.info.PathId, context.Token, context.ClassDataPath));
+                return index;
+            }
+            catch (InvalidDataException exception)
+            {
+                context.MeshIndexes[key] = -1;
+                context.Diagnostics.Add("Mesh preview unavailable: " + exception.Message);
+                return -1;
+            }
         }
 
         private static void ReadMaterials(DecodeContext context, AssetsFileInstance instance, AssetTypeValueField renderer,

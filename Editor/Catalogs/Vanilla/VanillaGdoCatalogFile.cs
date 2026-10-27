@@ -60,7 +60,7 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             ExternalGdoRelationshipSchema.Validate(data.relationships);
         }
 
-        private static VanillaGdoCatalogData Deserialize(byte[] content)
+        internal static VanillaGdoCatalogData Deserialize(byte[] content)
         {
             try
             {
