@@ -111,11 +111,22 @@ namespace KitchenLib.Studio.Editor.Bootstrap
         [MenuItem("KitchenLib Studio/Setup…")]
         public static void ShowWindow() => GetWindow<KitchenLibStudioSetupWindow>(true, "KitchenLib Studio Setup");
 
+        internal static GUIContent InstallationPathContent(string savedRoot)
+        {
+            string value = string.IsNullOrEmpty(savedRoot) ? "Not selected" : savedRoot;
+            return new GUIContent(value, value);
+        }
+
         private void OnGUI()
         {
             EditorGUILayout.HelpBox("Select your PlateUp installation, then generate the local mirrors to enable authoring. Generated files can be deleted and rebuilt.", MessageType.Info);
             EditorGUILayout.HelpBox(KitchenLibStudioAttribution.TypeTreeNotice, MessageType.Info);
-            EditorGUILayout.LabelField("PlateUp installation", PlateUpInstallationSettings.SavedRoot ?? "Not selected");
+            EditorGUILayout.LabelField("PlateUp installation");
+            GUIContent installation = InstallationPathContent(PlateUpInstallationSettings.SavedRoot);
+            Rect pathRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            EditorGUI.SelectableLabel(pathRect, installation.text, EditorStyles.textField);
+            if (Event.current.type == EventType.Repaint && pathRect.Contains(Event.current.mousePosition))
+                GUI.Label(pathRect, new GUIContent(string.Empty, installation.tooltip), GUIStyle.none);
             if (GUILayout.Button("Select PlateUp Installation…")) PlateUpInstallationSettings.ChangeInstallation();
             if (GUILayout.Button("Generate Mirrors")) MirrorGenerationMenu.RegenerateMirrors();
         }
