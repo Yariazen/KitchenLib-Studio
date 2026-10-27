@@ -17,12 +17,19 @@ jobs:
       - name: Verify package boundary and licenses
         shell: pwsh
         run: ./Tools~/Verify-Package.ps1
+      - name: Resolve package artifact name
+        id: package
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          "archive=com.kitchenlib.studio-$version.zip" >> $env:GITHUB_OUTPUT
+          "artifact=com.kitchenlib.studio-$version" >> $env:GITHUB_OUTPUT
       - name: Build allowlisted release archive
         shell: pwsh
-        run: ./Tools~/New-ReleaseArchive.ps1 -PackageRoot $PWD -DestinationPath (Join-Path $env:RUNNER_TEMP 'com.kitchenlib.studio-0.1.0-alpha.4.zip')
+        run: ./Tools~/New-ReleaseArchive.ps1 -PackageRoot $PWD -DestinationPath (Join-Path $env:RUNNER_TEMP '${{ steps.package.outputs.archive }}')
       - name: Upload verified release archive
         uses: actions/upload-artifact@v4
         with:
-          name: com.kitchenlib.studio-0.1.0-alpha.4
-          path: ${{ runner.temp }}/com.kitchenlib.studio-0.1.0-alpha.4.zip
+          name: ${{ steps.package.outputs.artifact }}
+          path: ${{ runner.temp }}/${{ steps.package.outputs.archive }}
           if-no-files-found: error
