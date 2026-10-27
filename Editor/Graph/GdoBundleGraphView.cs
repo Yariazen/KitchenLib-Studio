@@ -193,11 +193,9 @@ namespace KitchenLib.Studio.Editor.Graph
             }
             foreach (GdoGraphRelationshipRecord record in graph.Relationships)
             {
-                var element = new GdoGraphRelationshipNodeView(record, graph, () =>
-                {
-                    ReconcileEdges();
-                    _graphChanged?.Invoke();
-                }, () => RemoveRelationshipFromAction(record.Id),
+                var element = new GdoGraphRelationshipNodeView(record, graph,
+                    editKind => HandleRelationshipEdit(record, editKind),
+                    () => RemoveRelationshipFromAction(record.Id),
                     delta => MoveRelationshipFromAction(record.Id, delta),
                     delta => CanMoveRelationship(record.Id, delta), value =>
                     {
@@ -441,6 +439,22 @@ namespace KitchenLib.Studio.Editor.Graph
             foreach (GdoGraphOwnerGroup group in _ownerGroups.Values)
                 group.SetConnections(_graph.Edges);
             _rebuilding = wasRebuilding;
+        }
+
+        private void HandleRelationshipEdit(GdoGraphRelationshipRecord record,
+            GdoRelationshipEditKind editKind)
+        {
+            if (editKind == GdoRelationshipEditKind.PortTopology)
+            {
+                var relationship = FindElement(record.Id) as GdoGraphRelationshipNodeView;
+                bool expanded = relationship?.IsExpanded ?? record.Expanded;
+                GdoGraphNodeRecord owner = _graph?.FindNode(record.OwnerNodeId);
+                GdoGraphPresentationMode presentation = owner?.PresentationMode ?? GdoGraphPresentationMode.Full;
+                ReconcileEdges();
+                relationship?.SetExpanded(expanded, false);
+                FindOwnerGroup(record.OwnerNodeId)?.SetPresentation(presentation, false);
+            }
+            _graphChanged?.Invoke();
         }
 
         public GraphElement FindElement(string elementId) =>
