@@ -99,6 +99,50 @@ namespace KitchenLib.Studio.Editor.Bootstrap
         }
 
         internal static bool IsGameDataObject(TypeReference type) => DerivesFrom(type, "KitchenData.GameDataObject");
+
+        internal static bool UnitySerializationEligibility(TypeReference type) =>
+            UnitySerializationEligibility(type, new HashSet<string>(StringComparer.Ordinal));
+
+        internal static bool UnityFieldSerializationEligibility(FieldDefinition field)
+        {
+            if (field == null || field.IsStatic || field.IsLiteral || field.IsInitOnly || field.IsNotSerialized)
+                return false;
+            if (!field.IsPublic && !HasAttribute(field, "UnityEngine.SerializeField") &&
+                !HasAttribute(field, "UnityEngine.SerializeReference")) return false;
+            return UnitySerializationEligibility(field.FieldType);
+        }
+
+        private static bool UnitySerializationEligibility(TypeReference type, ISet<string> visiting)
+        {
+            if (type == null || type is GenericParameter || type.IsByReference || type.IsPointer) return false;
+            if (type.FullName == "System.String") return true;
+            if (type.IsPrimitive)
+                return type.MetadataType != MetadataType.IntPtr && type.MetadataType != MetadataType.UIntPtr;
+            if (type is ArrayType array)
+                return array.Rank == 1 && UnitySerializationEligibility(array.ElementType, visiting);
+            if (type is GenericInstanceType generic)
+                return generic.ElementType.FullName == "System.Collections.Generic.List`1" &&
+                    generic.GenericArguments.Count == 1 &&
+                    UnitySerializationEligibility(generic.GenericArguments[0], visiting);
+            if (DerivesFrom(type, "UnityEngine.Object")) return true;
+            TypeDefinition resolved;
+            try { resolved = type.Resolve(); }
+            catch (AssemblyResolutionException) { return false; }
+            if (resolved == null) return false;
+            if (resolved.IsEnum) return true;
+            if (resolved.HasGenericParameters || resolved.IsInterface || resolved.IsAbstract ||
+                DerivesFrom(resolved, "System.MulticastDelegate") || !resolved.IsSerializable) return false;
+            string key = resolved.Module.Assembly.Name.Name + ":" + resolved.FullName;
+            if (!visiting.Add(key)) return false;
+            try
+            {
+                return resolved.Fields.Where(field => !field.IsStatic && !field.IsLiteral && !field.IsInitOnly &&
+                        !field.IsNotSerialized && (field.IsPublic || HasAttribute(field, "UnityEngine.SerializeField") ||
+                        HasAttribute(field, "UnityEngine.SerializeReference")))
+                    .All(field => UnitySerializationEligibility(field.FieldType, visiting));
+            }
+            finally { visiting.Remove(key); }
+        }
         internal static bool DerivesFrom(TypeReference type, string name)
         {
             var seen = new HashSet<string>(StringComparer.Ordinal);
