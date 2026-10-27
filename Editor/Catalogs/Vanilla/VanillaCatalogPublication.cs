@@ -31,11 +31,12 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
     internal static class VanillaCatalogPublication
     {
         public static void Publish(VanillaCatalogGeneration generation, VanillaCatalogPublicationPaths paths,
-            CancellationToken token, Action<string, string> replace = null)
+            CancellationToken token, Action<string, string> replace = null, Action<string> cleanup = null)
         {
             if (generation == null) throw new ArgumentNullException(nameof(generation));
             if (paths == null) throw new ArgumentNullException(nameof(paths));
             replace = replace ?? ReplaceFile;
+            cleanup = cleanup ?? (path => Directory.Delete(path, true));
             string operation = Path.Combine(paths.StagingRoot, "catalog-" + Guid.NewGuid().ToString("N"));
             string stage = Path.Combine(operation, "stage");
             string backup = Path.Combine(operation, "backup");
@@ -92,7 +93,15 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             }
             finally
             {
-                if (Directory.Exists(operation)) Directory.Delete(operation, true);
+                if (Directory.Exists(operation))
+                {
+                    try { cleanup(operation); }
+                    catch (Exception exception)
+                    {
+                        Debug.LogWarning("Vanilla catalogue publication succeeded or rolled back, but its staging " +
+                            "directory could not be removed: " + exception.Message);
+                    }
+                }
             }
         }
 
@@ -103,12 +112,34 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             VanillaAssetCatalogFile.Read(snapshots);
             ExternalGdoSnapshotIndexData roundTrip = ExternalGdoSnapshotIndexFile.Read(index);
             if (roundTrip?.entries == null) throw new InvalidDataException("Snapshot index is incomplete.");
-            foreach (VanillaSnapshotPng png in generation.Pngs.Where(value => value.IsRendered))
+            VanillaSnapshotPng[] rendered = generation.Pngs.Where(value => value.IsRendered).ToArray();
+            var renderedById = new System.Collections.Generic.Dictionary<int, VanillaSnapshotPng>();
+            foreach (VanillaSnapshotPng png in rendered)
             {
+                if (string.IsNullOrEmpty(png.GameObjectKey) || png.GdoIds.Count == 0)
+                    throw new InvalidDataException("Rendered snapshot has no catalogue identity: " + png.CacheKey);
+                foreach (int gdoId in png.GdoIds)
+                    if (gdoId == 0 || renderedById.ContainsKey(gdoId))
+                        throw new InvalidDataException("Rendered snapshot contains a duplicate or invalid GDO ID: " + gdoId);
+                    else renderedById.Add(gdoId, png);
                 var cache = new SnapshotCache(cacheRoot);
                 if (cache.TryGet(png.CacheKey) == null)
                     throw new InvalidDataException("Staged snapshot cache pair is incomplete: " + png.CacheKey);
             }
+            var indexedIds = new System.Collections.Generic.HashSet<int>();
+            foreach (ExternalGdoSnapshotIndexEntry entry in roundTrip.entries)
+            {
+                if (entry == null || entry.gdoId == 0 || !indexedIds.Add(entry.gdoId))
+                    throw new InvalidDataException("Snapshot index contains a duplicate or invalid GDO ID.");
+                if (!renderedById.TryGetValue(entry.gdoId, out VanillaSnapshotPng png) ||
+                    !string.Equals(entry.gameObjectKey, png.GameObjectKey, StringComparison.Ordinal) ||
+                    !string.Equals(ExternalGdoSnapshotCacheIdentity.BuildKey(
+                        entry.gameObjectKey, entry.sourceFingerprint), png.CacheKey, StringComparison.Ordinal))
+                    throw new InvalidDataException("Snapshot index does not match the rendered cache for GDO ID " +
+                        entry.gdoId + ".");
+            }
+            if (indexedIds.Count != renderedById.Count)
+                throw new InvalidDataException("Snapshot index does not cover every rendered GDO ID.");
         }
 
         private static void BackupFile(string source, string backup)
