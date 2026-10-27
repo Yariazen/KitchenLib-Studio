@@ -11,6 +11,7 @@ namespace KitchenLib.Studio.Editor.Authoring
         internal GdoTypeDescriptorView(GdoTypeDescriptorData data) { Data = data; }
         public GdoTypeDescriptorData Data { get; }
         public string RuntimeTypeName => Data.RuntimeTypeName;
+        public string BaseTypeName => Data.BaseTypeName;
         public string DescriptorFingerprint => Data.DescriptorFingerprint;
         public bool IsAvailable => Data.Availability == "Available";
     }
