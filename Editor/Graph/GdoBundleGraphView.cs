@@ -32,9 +32,9 @@ namespace KitchenLib.Studio.Editor.Graph
         private bool _snapshotVisibilityScheduled;
         private int _snapshotGeneration;
         private bool _edgeGeometryRefreshScheduled;
-        private readonly Action<string> _createGdo;
+        private readonly Action<string, Vector2> _createGdo;
         private readonly Action _addSelected;
-        private readonly Action _addExternal;
+        private readonly Action<Vector2> _addExternal;
         private readonly Action _renameProject;
         private readonly Action _collectOverlays;
         private readonly ExternalGdoCatalogRepository _externalRepository;
@@ -43,7 +43,7 @@ namespace KitchenLib.Studio.Editor.Graph
             Func<string, bool> confirmMemberRemoval = null,
             Func<IExternalGdoSnapshotService> snapshotServiceFactory = null,
             Func<GraphElement, bool> snapshotVisibility = null,
-            Action<string> createGdo = null, Action addSelected = null, Action addExternal = null,
+            Action<string, Vector2> createGdo = null, Action addSelected = null, Action<Vector2> addExternal = null,
             Action renameProject = null, Action collectOverlays = null,
             ExternalGdoCatalogRepository externalRepository = null)
         {
@@ -104,29 +104,27 @@ namespace KitchenLib.Studio.Editor.Graph
 
             bool hasGraph = _graph != null;
             bool canCreate = hasGraph && _graph.HasAuthorIdentity;
-            foreach (GdoCreateMenuEntry entry in GdoCreateMenuCatalog.Build(
-                GdoGraphAssetCommands.SupportedRuntimeTypes))
-            {
-                string captured = entry.RuntimeTypeName;
-                evt.menu.AppendAction("Create GDO/" + entry.MenuPath, _ => _createGdo?.Invoke(captured),
-                    _ => canCreate && _createGdo != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
-            }
+            Vector2 graphPosition = ContextGraphPosition(evt);
+            GdoCreateMenuPresenter.Populate(evt.menu, "Create GDO/",
+                GdoCreateMenuCatalog.Build(GdoGraphAssetCommands.SupportedRuntimeTypes),
+                graphPosition, (value, position) => _createGdo?.Invoke(value, position),
+                () => canCreate && _createGdo != null);
             evt.menu.AppendAction("Add Selected GDO", _ => _addSelected?.Invoke(),
                 _ => hasGraph && _addSelected != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
-            evt.menu.AppendAction("External Reference…", _ => _addExternal?.Invoke(),
+            evt.menu.AppendAction("External Reference…", _ => _addExternal?.Invoke(graphPosition),
                 _ => hasGraph && _addExternal != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             foreach (var definition in StudioGraphNodeRegistry.All)
             {
                 string typeId = definition.TypeId;
                 evt.menu.AppendAction("Create Custom/" + definition.DisplayName + " (" + typeId + ")", _ =>
                 {
-                    Vector2 location = this.ChangeCoordinatesTo(contentViewContainer, evt.localMousePosition);
-                    var record = GdoBundleGraphRepository.AddCustomNode(_graph, typeId, new Rect(location, new Vector2(280, 180)));
+                    var record = GdoBundleGraphRepository.AddCustomNode(_graph, typeId,
+                        new Rect(graphPosition, new Vector2(280, 180)));
                     Load(_graph, record.Id);
                     _graphChanged?.Invoke();
                 }, _ => hasGraph ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             }
-            evt.menu.AppendAction("Create/Prefab", _ => CreatePrefab(evt.localMousePosition),
+            evt.menu.AppendAction("Create/Prefab", _ => CreatePrefab(graphPosition),
                 _ => hasGraph ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             evt.menu.AppendSeparator();
             evt.menu.AppendAction("Rename Project…", _ => _renameProject?.Invoke(),
@@ -134,6 +132,9 @@ namespace KitchenLib.Studio.Editor.Graph
             evt.menu.AppendAction("Collect Project Overlays", _ => _collectOverlays?.Invoke(),
                 _ => hasGraph && _collectOverlays != null ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
         }
+
+        internal Vector2 ContextGraphPosition(ContextualMenuPopulateEvent evt) =>
+            this.ChangeCoordinatesTo(contentViewContainer, evt.localMousePosition);
 
         private void RouteOwnerGroupContextMenu(ContextualMenuPopulateEvent evt)
         {
@@ -623,10 +624,9 @@ namespace KitchenLib.Studio.Editor.Graph
             _graphChanged?.Invoke();
         }
 
-        private void CreatePrefab(Vector2 mousePosition)
+        private void CreatePrefab(Vector2 graphPosition)
         {
             if (_graph == null) return;
-            Vector2 graphPosition = this.ChangeCoordinatesTo(contentViewContainer, mousePosition);
             GdoGraphPrefabRecord record = GdoBundleGraphRepository.AddPrefab(_graph, "New Prefab",
                 new Rect(graphPosition, new Vector2(260, 220)));
             Load(_graph, record.Id);
