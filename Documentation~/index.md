@@ -9,7 +9,7 @@ KitchenLib Studio is a Unity Editor tool for authoring PlateUp game data and bui
 Open **Window → Package Manager**, choose **+ → Add package from git URL**, and enter the repository URL pinned to this release tag:
 
 ```text
-https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.4
+https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.6
 ```
 
 For an internal local checkout, choose **+ → Add package from disk** and select its root `package.json`. The MIT grant in `LICENSE.md` covers original KitchenLib Studio code and documentation only; exact provenance and acknowledgments for bundled third-party material are recorded in `Third Party Notices.md`.
