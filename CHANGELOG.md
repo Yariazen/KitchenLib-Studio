@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.0-alpha.8]
+
+- Keep `KitchenLib Studio > Catalogues > Refresh All` available before mirrors exist; offer to generate required mirrors and automatically continue the queued catalogue refresh.
+- Make generated vanilla snapshot PNGs authoritative in graph views, eliminating unexpected on-demand vanilla rendering and reporting incomplete catalogue output clearly.
+- Install from Git with `https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.8`.
+
 ## [0.1.0-alpha.7]
 
 - Generate vanilla snapshots through one validated AssetsTools session, reusing loaded containers and decoded meshes, materials, textures, and sprites across the batch.
@@ -65,4 +71,4 @@ This release supersedes the failed `0.1.0-alpha.2` automation candidate and incl
 - Pin and acknowledge the exact AssetRipper type-tree data provenance used by the internal alpha.
 - Show a non-blocking type-tree attribution notice in KitchenLib Studio Setup.
 
-Current alpha label: `0.1.0-alpha.7`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.
+Current alpha label: `0.1.0-alpha.8`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.

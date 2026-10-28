@@ -1,6 +1,6 @@
 # Release process
 
-KitchenLib Studio is a UPM package at the repository root. Release tags use `v<package.json version>`; the current candidate is `v0.1.0-alpha.7`. Publishing a tag or GitHub release requires a separate human release decision.
+KitchenLib Studio is a UPM package at the repository root. Release tags use `v<package.json version>`; the current candidate is `v0.1.0-alpha.8`. Publishing a tag or GitHub release requires a separate human release decision.
 
 ## Manual `0.x` releases
 

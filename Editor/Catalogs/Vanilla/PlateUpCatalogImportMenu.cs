@@ -13,7 +13,6 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             if (installation != null) PlateUpCatalogImportController.Import(installation);
         }
 
-        [MenuItem("KitchenLib Studio/Catalogues/Refresh All")]
         public static void Refresh()
         {
             PlateUpInstallation installation = ResolveInstallation(true);

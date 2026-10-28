@@ -359,23 +359,18 @@ namespace KitchenLib.Studio.Editor.Graph
 
         private static IExternalGdoSnapshotService CreateDefaultSnapshotService()
         {
-            string path = KitchenLibStudioGeneratedPaths.VanillaSnapshotCatalogPath;
             string indexPath = KitchenLibStudioGeneratedPaths.VanillaSnapshotIndexPath;
-            if (!File.Exists(path)) return Wrap(new UnavailableSnapshotService(
+            if (!File.Exists(indexPath)) return Wrap(new UnavailableSnapshotService(
                 "Refresh the snapshot catalogue to generate external previews."));
-            if (File.Exists(indexPath))
-                return Wrap(CreateIndexedSnapshotService(indexPath,
-                    () => CreateFullSnapshotServiceAsync(path, new SnapshotCache())));
-            return Wrap(CreateFullSnapshotService(path, new SnapshotCache()));
+            return Wrap(CreateIndexedSnapshotService(indexPath));
         }
 
-        private static IExternalGdoSnapshotService CreateIndexedSnapshotService(string indexPath,
-            Func<System.Threading.Tasks.Task<IExternalGdoSnapshotService>> fallbackFactory)
+        private static IExternalGdoSnapshotService CreateIndexedSnapshotService(string indexPath)
         {
             try
             {
                 ExternalGdoSnapshotIndexData index = ExternalGdoSnapshotIndexFile.Read(indexPath);
-                return new IndexedExternalGdoSnapshotService(index, new SnapshotCache(), fallbackFactory);
+                return new IndexedExternalGdoSnapshotService(index, new SnapshotCache());
             }
             catch (Exception exception) when (exception is ArgumentException || exception is IOException ||
                 exception is UnauthorizedAccessException || exception is InvalidDataException)
@@ -386,29 +381,6 @@ namespace KitchenLib.Studio.Editor.Graph
 
         private static IExternalGdoSnapshotService Wrap(IExternalGdoSnapshotService vanilla) =>
             new ImportedGdoSnapshotService(vanilla, ExternalGdoCatalogRepository.Current);
-
-        private static IExternalGdoSnapshotService CreateFullSnapshotService(string path, SnapshotCache cache)
-        {
-            try
-            {
-                VanillaAssetCatalogData catalog = VanillaAssetCatalogFile.Read(path);
-                var repository = new VanillaAssetCatalogRepository(path);
-                if (!repository.Reload()) return new UnavailableSnapshotService(
-                    "The snapshot catalogue could not be loaded.");
-                PlateUpInstallation installation = PlateUpCatalogImportMenu.ResolveInstallation(false);
-                return ExternalGdoSnapshotService.CreateDefault(catalog, repository, installation?.GameRoot, cache);
-            }
-            catch (Exception exception) { return new UnavailableSnapshotService(exception.Message); }
-        }
-
-        private static async System.Threading.Tasks.Task<IExternalGdoSnapshotService> CreateFullSnapshotServiceAsync(
-            string path, SnapshotCache cache)
-        {
-            VanillaAssetCatalogData catalog = await System.Threading.Tasks.Task.Run(() => VanillaAssetCatalogFile.Read(path));
-            var repository = new VanillaAssetCatalogRepository(catalog);
-            PlateUpInstallation installation = PlateUpCatalogImportMenu.ResolveInstallation(false);
-            return ExternalGdoSnapshotService.CreateDefault(catalog, repository, installation?.GameRoot, cache);
-        }
 
         private sealed class UnavailableSnapshotService : IExternalGdoSnapshotService
         {
