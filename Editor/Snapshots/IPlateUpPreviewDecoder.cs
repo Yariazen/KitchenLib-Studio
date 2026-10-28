@@ -11,8 +11,15 @@ namespace KitchenLib.Studio.Editor.Snapshots
         public int Total { get; }
     }
 
+    internal interface IPlateUpPreviewDecodeSession : IDisposable
+    {
+        VanillaPreviewModel Decode(VanillaAssetRecord root, IProgress<SnapshotProgress> progress,
+            CancellationToken cancellationToken);
+    }
+
     internal interface IPlateUpPreviewDecoder
     {
+        IPlateUpPreviewDecodeSession OpenSession(string gameRoot, VanillaAssetCatalogData catalog);
         VanillaPreviewModel Decode(string gameRoot, VanillaAssetRecord root,
             VanillaAssetCatalogData catalog, IProgress<SnapshotProgress> progress,
             CancellationToken cancellationToken);

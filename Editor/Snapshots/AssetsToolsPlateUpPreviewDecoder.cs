@@ -13,6 +13,9 @@ namespace KitchenLib.Studio.Editor.Snapshots
 {
     internal sealed class LegacyWaterPlateUpPreviewDecoder : IPlateUpPreviewDecoder
     {
+        public IPlateUpPreviewDecodeSession OpenSession(string gameRoot, VanillaAssetCatalogData catalog) =>
+            new LegacySession(this, gameRoot, catalog);
+
         public VanillaPreviewModel Decode(string gameRoot, VanillaAssetRecord root,
             VanillaAssetCatalogData catalog, IProgress<SnapshotProgress> progress,
             CancellationToken cancellationToken)
@@ -126,5 +129,17 @@ namespace KitchenLib.Studio.Editor.Snapshots
             (pointer["m_PathID"] ?? pointer).AsLong;
         private static Vector3 Vector3(AssetTypeValueField value) => new Vector3(value["x"].AsFloat, value["y"].AsFloat, value["z"].AsFloat);
         private static Quaternion QuaternionValue(AssetTypeValueField value) => new Quaternion(value["x"].AsFloat, value["y"].AsFloat, value["z"].AsFloat, value["w"].AsFloat);
+
+        private sealed class LegacySession : IPlateUpPreviewDecodeSession
+        {
+            private readonly LegacyWaterPlateUpPreviewDecoder _decoder;
+            private readonly string _gameRoot;
+            private readonly VanillaAssetCatalogData _catalog;
+            public LegacySession(LegacyWaterPlateUpPreviewDecoder decoder, string gameRoot, VanillaAssetCatalogData catalog)
+            { _decoder = decoder; _gameRoot = gameRoot; _catalog = catalog; }
+            public VanillaPreviewModel Decode(VanillaAssetRecord root, IProgress<SnapshotProgress> progress,
+                CancellationToken cancellationToken) => _decoder.Decode(_gameRoot, root, _catalog, progress, cancellationToken);
+            public void Dispose() { }
+        }
     }
 }

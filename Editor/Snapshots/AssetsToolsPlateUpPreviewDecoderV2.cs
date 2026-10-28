@@ -27,37 +27,87 @@ namespace KitchenLib.Studio.Editor.Snapshots
             _classDataPath = Path.GetFullPath(classDataPath);
         }
 
+        public IPlateUpPreviewDecodeSession OpenSession(string gameRoot, VanillaAssetCatalogData catalog) =>
+            new Session(gameRoot, catalog, _classDataPath, true);
+
         public VanillaPreviewModel Decode(string gameRoot, VanillaAssetRecord root, VanillaAssetCatalogData catalog,
             IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)
         {
-            if (root == null) throw new ArgumentNullException(nameof(root));
-            if (!string.Equals(root.Kind, "gameObject", StringComparison.Ordinal))
-                throw new ArgumentException("Snapshot catalogue record must be a GameObject.", nameof(root));
-            PlateUpSourceFingerprint.Validate(gameRoot, catalog);
-            if (!(catalog.records ?? Array.Empty<VanillaAssetRecordData>()).Any(value => value.key == root.Key &&
-                value.source.relativePath == root.Source.RelativePath && value.source.pathId == root.Source.PathId))
-                throw new InvalidDataException("Snapshot record does not belong to the validated catalogue.");
-            return Decode(gameRoot, root.Source, progress, cancellationToken);
+            using (IPlateUpPreviewDecodeSession session = OpenSession(gameRoot, catalog))
+                return session.Decode(root, progress, cancellationToken);
         }
 
         public VanillaPreviewModel Decode(string gameRoot, VanillaObjectIdentity root,
             IProgress<SnapshotProgress> progress, CancellationToken cancellationToken)
         {
-            string dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
-            string assetPath = Path.Combine(dataRoot, root.RelativePath);
-            var manager = new AssetsManager();
-            var context = new DecodeContext(gameRoot, _classDataPath, manager, progress, cancellationToken);
-            context.Diagnostics.Add("Unavailable player shaders use an editor fallback.");
-            try
+            using (var session = new Session(gameRoot, null, _classDataPath, false))
+                return session.Decode(root, progress, cancellationToken);
+        }
+
+        private sealed class Session : IPlateUpPreviewDecodeSession
+        {
+            private readonly string _dataRoot;
+            private readonly VanillaAssetCatalogData _catalog;
+            private readonly AssetsManager _manager = new AssetsManager();
+            private readonly DecodeContext _context;
+            private readonly Dictionary<string, AssetsFileInstance> _files =
+                new Dictionary<string, AssetsFileInstance>(StringComparer.OrdinalIgnoreCase);
+            private bool _disposed;
+
+            public Session(string gameRoot, VanillaAssetCatalogData catalog, string classDataPath, bool validate)
             {
-                manager.LoadClassPackage(_classDataPath);
-                AssetsFileInstance instance = manager.LoadAssetsFile(assetPath, false);
-                manager.LoadClassDatabaseFromPackage(instance.file.Metadata.UnityVersion);
-                PreviewNodeData node = ReadGameObject(context, instance, root.PathId, new HashSet<string>());
-                return new VanillaPreviewModel(node, context.Meshes.ToArray(), context.Materials.ToArray(),
-                    context.Textures.ToArray(), context.Sprites.ToArray(), context.Diagnostics.Distinct().ToArray());
+                if (validate) PlateUpSourceFingerprint.Validate(gameRoot, catalog);
+                _dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
+                _catalog = catalog;
+                _manager.LoadClassPackage(classDataPath);
+                _context = new DecodeContext(gameRoot, classDataPath, _manager, null, CancellationToken.None);
+                _context.Diagnostics.Add("Unavailable player shaders use an editor fallback.");
             }
-            finally { manager.UnloadAll(true); }
+
+            public VanillaPreviewModel Decode(VanillaAssetRecord root, IProgress<SnapshotProgress> progress,
+                CancellationToken cancellationToken)
+            {
+                if (root == null) throw new ArgumentNullException(nameof(root));
+                if (!string.Equals(root.Kind, "gameObject", StringComparison.Ordinal))
+                    throw new ArgumentException("Snapshot catalogue record must be a GameObject.", nameof(root));
+                if (_catalog != null && !(_catalog.records ?? Array.Empty<VanillaAssetRecordData>()).Any(value =>
+                    value.key == root.Key && value.source.relativePath == root.Source.RelativePath &&
+                    value.source.pathId == root.Source.PathId))
+                    throw new InvalidDataException("Snapshot record does not belong to the validated catalogue.");
+                return Decode(root.Source, progress, cancellationToken);
+            }
+
+            public VanillaPreviewModel Decode(VanillaObjectIdentity root, IProgress<SnapshotProgress> progress,
+                CancellationToken cancellationToken)
+            {
+                if (_disposed) throw new ObjectDisposedException(nameof(Session));
+                cancellationToken.ThrowIfCancellationRequested();
+                _context.Progress = progress;
+                _context.Token = cancellationToken;
+                _context.NodeCount = 0;
+                AssetsFileInstance instance = File(root.RelativePath);
+                PreviewNodeData node = ReadGameObject(_context, instance, root.PathId, new HashSet<string>());
+                return new VanillaPreviewModel(node, _context.Meshes.ToArray(), _context.Materials.ToArray(),
+                    _context.Textures.ToArray(), _context.Sprites.ToArray(), _context.Diagnostics.Distinct().ToArray());
+            }
+
+            private AssetsFileInstance File(string relativePath)
+            {
+                if (_files.TryGetValue(relativePath, out AssetsFileInstance instance)) return instance;
+                string path = Path.Combine(_dataRoot, relativePath);
+                instance = _manager.LoadAssetsFile(path, false);
+                _manager.LoadClassDatabaseFromPackage(instance.file.Metadata.UnityVersion);
+                _files.Add(relativePath, instance);
+                return instance;
+            }
+
+            public void Dispose()
+            {
+                if (_disposed) return;
+                _disposed = true;
+                _manager.UnloadAll(true);
+                _files.Clear();
+            }
         }
 
         private static PreviewNodeData ReadGameObject(DecodeContext context, AssetsFileInstance instance,
@@ -266,7 +316,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             public DecodeContext(string gameRoot, string classDataPath, AssetsManager manager,
                 IProgress<SnapshotProgress> progress, CancellationToken token)
             { GameRoot = gameRoot; ClassDataPath = classDataPath; Manager = manager; Progress = progress; Token = token; }
-            public readonly string GameRoot; public readonly string ClassDataPath; public readonly AssetsManager Manager; public readonly IProgress<SnapshotProgress> Progress; public readonly CancellationToken Token;
+            public readonly string GameRoot; public readonly string ClassDataPath; public readonly AssetsManager Manager; public IProgress<SnapshotProgress> Progress; public CancellationToken Token;
             public readonly List<PreviewMeshData> Meshes = new List<PreviewMeshData>(); public readonly Dictionary<string, int> MeshIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             public readonly List<PreviewMaterialData> Materials = new List<PreviewMaterialData>(); public readonly Dictionary<string, int> MaterialIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             public readonly List<PreviewTextureData> Textures = new List<PreviewTextureData>(); public readonly Dictionary<string, int> TextureIndexes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);

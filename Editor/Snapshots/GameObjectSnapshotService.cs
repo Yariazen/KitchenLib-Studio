@@ -1,10 +1,18 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 namespace KitchenLib.Studio.Editor.Snapshots
 {
+    internal sealed class SnapshotRenderTiming
+    {
+        public SnapshotRenderTiming(TimeSpan decode, TimeSpan render) { Decode = decode; Render = render; }
+        public TimeSpan Decode { get; }
+        public TimeSpan Render { get; }
+    }
+
     internal sealed class GameObjectSnapshotService
     {
         private readonly string _gameRoot;
@@ -74,6 +82,23 @@ namespace KitchenLib.Studio.Editor.Snapshots
                 () => _decoder.Decode(_gameRoot, record, _catalog, null, token), token).GetAwaiter().GetResult();
             token.ThrowIfCancellationRequested();
             return _renderVanilla(model, options);
+        }
+
+        internal SnapshotRenderResult RenderVanillaBlocking(IPlateUpPreviewDecodeSession session, string key,
+            SnapshotRenderOptions options, CancellationToken token, Action<SnapshotRenderTiming> timing = null)
+        {
+            if (session == null) throw new ArgumentNullException(nameof(session));
+            if (_repository == null) throw new InvalidOperationException("Vanilla snapshot repository is not configured.");
+            VanillaAssetRecord record = _repository.Find(key);
+            if (record == null) throw new InvalidOperationException("Vanilla GameObject key was not found: " + key);
+            var watch = Stopwatch.StartNew();
+            VanillaPreviewModel model = session.Decode(record, null, token);
+            TimeSpan decode = watch.Elapsed;
+            token.ThrowIfCancellationRequested();
+            watch.Restart();
+            SnapshotRenderResult result = _renderVanilla(model, options);
+            timing?.Invoke(new SnapshotRenderTiming(decode, watch.Elapsed));
+            return result;
         }
 
         private static SnapshotRenderResult ReconstructAndRenderVanilla(VanillaPreviewModel model,
