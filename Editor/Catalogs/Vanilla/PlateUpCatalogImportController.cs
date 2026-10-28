@@ -44,8 +44,17 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                         item.TotalObjects <= 0 ? 0f : (float)item.CompletedObjects / item.TotalObjects))
                         cancellation.Cancel();
                 });
+                var snapshotProgress = new Progress<VanillaSnapshotBatchProgress>(item =>
+                {
+                    if (generation != _operationGeneration) return;
+                    string current = string.IsNullOrEmpty(item.GameObjectKey) ? string.Empty : ": " + item.GameObjectKey;
+                    string label = "Rendering snapshot " + item.Completed + " of " + item.Total + current;
+                    if (EditorUtility.DisplayCancelableProgressBar("Import PlateUp Vanilla Catalog", label,
+                        item.Total <= 0 ? 1f : (float)item.Completed / item.Total))
+                        cancellation.Cancel();
+                });
                 Task previous = _activeOperation;
-                operation = RunQueued(previous, installation, schema, progress, cancellation.Token);
+                operation = RunQueued(previous, installation, schema, progress, snapshotProgress, cancellation.Token);
                 _activeOperation = operation;
             }
             PlateUpCatalogImportResult result;
@@ -78,7 +87,8 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         }
 
         private static async Task<PlateUpCatalogImportResult> RunQueued(Task previous, PlateUpInstallation installation,
-            string schema, IProgress<VanillaGdoScanProgress> progress, CancellationToken token)
+            string schema, IProgress<VanillaGdoScanProgress> progress,
+            IProgress<VanillaSnapshotBatchProgress> snapshotProgress, CancellationToken token)
         {
             try { await previous; }
             catch { }
@@ -87,7 +97,8 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             {
                 KitchenLibStudioBootstrap.RequireCurrentOutput(installation);
                 var service = new PlateUpCatalogImportService(new DefaultPlateUpCatalogImportPipeline(schema));
-                return await service.ImportCombinedAsync(installation, PublicationPaths(), progress, token);
+                return await service.ImportCombinedAsync(installation, PublicationPaths(), progress, token,
+                    snapshotProgress);
             }
             catch (OperationCanceledException) { return PlateUpCatalogImportResult.CancelledResult(); }
             catch (Exception exception) { return PlateUpCatalogImportResult.Failure(exception.Message); }

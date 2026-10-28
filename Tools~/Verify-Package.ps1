@@ -110,6 +110,12 @@ $bootstrapSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Boot
 if ($bootstrapSource -notmatch 'wordWrap\s*=\s*true' -or $bootstrapSource -notmatch '\.CalcHeight\s*\(') {
     Add-Failure 'Setup installation path must wrap and allocate its calculated display height.'
 }
+$snapshotBatchSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Snapshots/VanillaSnapshotBatchRenderer.cs') -Raw
+$catalogControllerSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Catalogs/Vanilla/PlateUpCatalogImportController.cs') -Raw
+if ($snapshotBatchSource -notmatch 'IPlateUpPreviewDecodeSession\s+session' -or
+    $catalogControllerSource -notmatch 'Rendering snapshot.* of ') {
+    Add-Failure 'Vanilla snapshot generation must reuse one decode session and report item progress.'
+}
 
 try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
