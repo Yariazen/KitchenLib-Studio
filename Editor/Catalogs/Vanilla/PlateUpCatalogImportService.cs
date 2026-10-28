@@ -94,11 +94,14 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 var repository = new VanillaAssetCatalogRepository(snapshots);
                 var renderer = new GameObjectSnapshotService(installation.GameRoot, snapshots, repository);
                 var batch = new VanillaSnapshotBatchRenderer(ExternalGdoSnapshotSourceResolver.Resolve,
-                    (key, token) => Task.FromResult(renderer.RenderVanillaBlocking(key,
+                    (session, key, token) => Task.FromResult(renderer.RenderVanillaBlocking(session, key,
                         new SnapshotRenderOptions(ExternalGdoSnapshotCacheIdentity.ThumbnailSize,
                             ExternalGdoSnapshotCacheIdentity.ThumbnailSize), token)));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
-                var pngs = await batch.RenderAsync(snapshots, cancellationToken);
+                var decoder = new AssetsToolsPlateUpPreviewDecoder();
+                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
+                    pngs = await batch.RenderAsync(snapshots, session, null, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 var generation = new VanillaCatalogGeneration(gdos, snapshots,
                     RenderedIndex(snapshots, pngs), pngs);
@@ -141,9 +144,12 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 var options = new SnapshotRenderOptions(ExternalGdoSnapshotCacheIdentity.ThumbnailSize,
                     ExternalGdoSnapshotCacheIdentity.ThumbnailSize);
                 var batch = new VanillaSnapshotBatchRenderer(ExternalGdoSnapshotSourceResolver.Resolve,
-                    (key, token) => Task.FromResult(renderer.RenderVanillaBlocking(key, options, token)));
+                    (session, key, token) => Task.FromResult(renderer.RenderVanillaBlocking(session, key, options, token)));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
-                var pngs = batch.RenderAsync(snapshots, cancellationToken).GetAwaiter().GetResult();
+                var decoder = new AssetsToolsPlateUpPreviewDecoder();
+                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
+                    pngs = batch.RenderAsync(snapshots, session, null, cancellationToken).GetAwaiter().GetResult();
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish);
                 VanillaCatalogPublication.Publish(new VanillaCatalogGeneration(gdos, snapshots,
                     RenderedIndex(snapshots, pngs), pngs), paths, cancellationToken);
