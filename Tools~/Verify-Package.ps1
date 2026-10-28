@@ -91,10 +91,30 @@ foreach ($file in $allFiles) {
     }
 }
 
+# Generated mirrors are not backward compatible. A versioned compile gate keeps
+# the editor assembly unloaded until the current generator publishes fresh output.
+$editorAssemblySource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/KitchenLib.Studio.Editor.asmdef') -Raw
+$defineSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/KitchenLibStudioDefineSymbols.cs') -Raw
+$generatorSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/PlateUpMirrorGenerator.cs') -Raw
+if ($editorAssemblySource -notmatch 'KITCHENLIB_STUDIO_MIRRORS_V3' -or
+    $defineSource -notmatch 'KITCHENLIB_STUDIO_MIRRORS_V3' -or
+    $defineSource -notmatch 'StartsWith\(MirrorsSymbolPrefix' -or
+    $generatorSource -notmatch 'Version\s*=>\s*"3/') {
+    Add-Failure 'Current editor code must require regenerated V3 mirrors and remove stale mirror symbols.'
+}
+if ((Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Authoring/GdoDescriptorCatalog.cs') -Raw) -match 'GdoFieldDescriptorCompatibility') {
+    Add-Failure 'Generated mirror backward-compatibility accessors are forbidden.'
+}
+
+$bootstrapSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/KitchenLibStudioBootstrap.cs') -Raw
+if ($bootstrapSource -notmatch 'wordWrap\s*=\s*true' -or $bootstrapSource -notmatch '\.CalcHeight\s*\(') {
+    Add-Failure 'Setup installation path must wrap and allocate its calculated display height.'
+}
+
 try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
     if ($package.name -cne 'com.kitchenlib.studio') { Add-Failure "package.json name must be com.kitchenlib.studio." }
-    if ($package.version -cne '0.1.0-alpha.5') { Add-Failure "package.json version must be 0.1.0-alpha.5." }
+    if ($package.version -cne '0.1.0-alpha.6') { Add-Failure "package.json version must be 0.1.0-alpha.6." }
     $expectedRepositoryUrl = 'https://github.com/Yariazen/KitchenLib-Studio.git'
     if ($package.repository.type -cne 'git' -or $package.repository.url -cne $expectedRepositoryUrl) {
         Add-Failure "package.json repository must be $expectedRepositoryUrl."
@@ -497,5 +517,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.5 package and repository are production-only.'
+Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.6 package and repository are production-only.'
 exit 0

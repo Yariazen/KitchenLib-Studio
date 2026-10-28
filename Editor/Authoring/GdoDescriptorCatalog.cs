@@ -57,4 +57,5 @@ namespace KitchenLib.Studio.Editor.Authoring
             return generic < 0 ? runtimeType : runtimeType.Substring(0, generic);
         }
     }
+
 }

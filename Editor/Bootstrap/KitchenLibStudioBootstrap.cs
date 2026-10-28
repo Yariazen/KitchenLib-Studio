@@ -123,8 +123,11 @@ namespace KitchenLib.Studio.Editor.Bootstrap
             EditorGUILayout.HelpBox(KitchenLibStudioAttribution.TypeTreeNotice, MessageType.Info);
             EditorGUILayout.LabelField("PlateUp installation");
             GUIContent installation = InstallationPathContent(PlateUpInstallationSettings.SavedRoot);
-            Rect pathRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
-            EditorGUI.SelectableLabel(pathRect, installation.text, EditorStyles.textField);
+            var pathStyle = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
+            float pathWidth = Mathf.Max(1f, position.width - 16f);
+            float pathHeight = Mathf.Max(EditorGUIUtility.singleLineHeight, pathStyle.CalcHeight(installation, pathWidth));
+            Rect pathRect = EditorGUILayout.GetControlRect(false, pathHeight);
+            EditorGUI.SelectableLabel(pathRect, installation.text, pathStyle);
             if (Event.current.type == EventType.Repaint && pathRect.Contains(Event.current.mousePosition))
                 GUI.Label(pathRect, new GUIContent(string.Empty, installation.tooltip), GUIStyle.none);
             if (GUILayout.Button("Select PlateUp Installation…")) PlateUpInstallationSettings.ChangeInstallation();
