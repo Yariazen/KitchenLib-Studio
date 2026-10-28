@@ -32,7 +32,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
                 fields => Decode(fields, dataRoot, cancellationToken));
         }
 
-        private static PreviewMeshData Decode(AssetTypeValueField fields, string dataRoot, CancellationToken cancellationToken)
+        internal static PreviewMeshData Decode(AssetTypeValueField fields, string dataRoot,
+            CancellationToken cancellationToken)
         {
             string name = fields["m_Name"].AsString;
             AssetTypeValueField compressed = fields["m_CompressedMesh"];

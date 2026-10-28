@@ -92,13 +92,22 @@ namespace KitchenLib.Studio.Editor.Snapshots
             VanillaAssetRecord record = _repository.Find(key);
             if (record == null) throw new InvalidOperationException("Vanilla GameObject key was not found: " + key);
             var watch = Stopwatch.StartNew();
-            VanillaPreviewModel model = session.Decode(record, null, token);
-            TimeSpan decode = watch.Elapsed;
-            token.ThrowIfCancellationRequested();
-            watch.Restart();
-            SnapshotRenderResult result = _renderVanilla(model, options);
-            timing?.Invoke(new SnapshotRenderTiming(decode, watch.Elapsed));
-            return result;
+            TimeSpan decode = TimeSpan.Zero;
+            TimeSpan render = TimeSpan.Zero;
+            try
+            {
+                VanillaPreviewModel model = session.Decode(record, null, token);
+                decode = watch.Elapsed;
+                token.ThrowIfCancellationRequested();
+                watch.Restart();
+                try { return _renderVanilla(model, options); }
+                finally { render = watch.Elapsed; }
+            }
+            finally
+            {
+                if (decode == TimeSpan.Zero) decode = watch.Elapsed;
+                timing?.Invoke(new SnapshotRenderTiming(decode, render));
+            }
         }
 
         private static SnapshotRenderResult ReconstructAndRenderVanilla(VanillaPreviewModel model,

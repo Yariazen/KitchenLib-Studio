@@ -56,12 +56,20 @@ namespace KitchenLib.Studio.Editor.Snapshots
 
             public Session(string gameRoot, VanillaAssetCatalogData catalog, string classDataPath, bool validate)
             {
-                if (validate) PlateUpSourceFingerprint.Validate(gameRoot, catalog);
-                _dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
-                _catalog = catalog;
-                _manager.LoadClassPackage(classDataPath);
-                _context = new DecodeContext(gameRoot, classDataPath, _manager, null, CancellationToken.None);
-                _context.Diagnostics.Add("Unavailable player shaders use an editor fallback.");
+                try
+                {
+                    if (validate) PlateUpSourceFingerprint.Validate(gameRoot, catalog);
+                    _dataRoot = PlateUpPlatformLayout.ResolveLayout(gameRoot).DataRoot;
+                    _catalog = catalog;
+                    _manager.LoadClassPackage(classDataPath);
+                    _context = new DecodeContext(gameRoot, classDataPath, _manager, null, CancellationToken.None);
+                    _context.Diagnostics.Add("Unavailable player shaders use an editor fallback.");
+                }
+                catch
+                {
+                    _manager.UnloadAll(true);
+                    throw;
+                }
             }
 
             public VanillaPreviewModel Decode(VanillaAssetRecord root, IProgress<SnapshotProgress> progress,
@@ -180,8 +188,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
             try
             {
                 int index = context.Meshes.Count; context.MeshIndexes.Add(key, index);
-                context.Meshes.Add(PlateUpMeshDecoder.DecodeInstalled(context.GameRoot,
-                    Path.GetFileName(external.file.path), external.info.PathId, context.Token, context.ClassDataPath));
+                context.Meshes.Add(PlateUpMeshDecoder.Decode(external.baseField,
+                    PlateUpPlatformLayout.ResolveLayout(context.GameRoot).DataRoot, context.Token));
                 return index;
             }
             catch (InvalidDataException exception)
@@ -241,8 +249,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
             string identity = Identity(external.file, external.info.PathId);
             if (context.TextureIndexes.TryGetValue(identity, out int existing)) return existing;
             int index = context.Textures.Count; context.TextureIndexes.Add(identity, index);
-            PreviewTextureData decoded = PlateUpTextureDecoder.DecodeInstalled(context.GameRoot,
-                Path.GetFileName(external.file.path), external.info.PathId, context.Token, context.ClassDataPath);
+            PreviewTextureData decoded = PlateUpTextureDecoder.Decode(external.baseField,
+                PlateUpPlatformLayout.ResolveLayout(context.GameRoot).DataRoot, context.Token);
             context.Textures.Add(external.info.TypeId == (int)AssetClassID.Cubemap
                 ? new PreviewTextureData(decoded.Name, decoded.Width, decoded.Height, decoded.Format, decoded.Linear,
                     decoded.Data, decoded.Encoding, true)
@@ -282,7 +290,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
             if (Missing(pointer)) return default(AssetExternal);
             AssetTypeValueField file = pointer["m_FileID"]; AssetTypeValueField path = pointer["m_PathID"];
             if (Missing(path) || path.AsLong == 0) return default(AssetExternal);
-            return manager.GetExtAsset(instance, Missing(file) ? 0 : file.AsInt, path.AsLong, false, AssetReadFlags.None);
+            return manager.GetExtAsset(instance, Missing(file) ? 0 : file.AsInt, path.AsLong, true, AssetReadFlags.None);
         }
         private static IEnumerable<AssetTypeValueField> BoundedArray(AssetTypeValueField field, int maximum)
         {

@@ -61,7 +61,9 @@ namespace KitchenLib.Studio.Editor.Snapshots
             foreach (KeyValuePair<string, List<int>> item in work)
             {
                 token.ThrowIfCancellationRequested();
-                progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed, work.Length));
+                progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed + 1, work.Length));
+                if (progress != null) await Task.Yield();
+                token.ThrowIfCancellationRequested();
                 SnapshotRenderResult rendered;
                 try { rendered = await _render(session, item.Key, token); }
                 catch (SnapshotSubjectUnsupportedException exception)
