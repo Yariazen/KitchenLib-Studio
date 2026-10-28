@@ -63,14 +63,9 @@ namespace KitchenLib.Studio.Editor.Snapshots
     {
         private readonly Dictionary<int, ExternalGdoSnapshotIndexEntry> _entries;
         private readonly SnapshotCache _cache;
-        private readonly Func<System.Threading.Tasks.Task<IExternalGdoSnapshotService>> _fallbackFactory;
         private readonly List<Texture2D> _textures = new List<Texture2D>();
-        private IExternalGdoSnapshotService _fallback;
-        private System.Threading.Tasks.Task<IExternalGdoSnapshotService> _fallbackTask;
-        private bool _disposed;
-        public IndexedExternalGdoSnapshotService(ExternalGdoSnapshotIndexData index, SnapshotCache cache,
-            Func<System.Threading.Tasks.Task<IExternalGdoSnapshotService>> fallbackFactory)
-        { _entries = (index?.entries ?? Array.Empty<ExternalGdoSnapshotIndexEntry>()).ToDictionary(value => value.gdoId); _cache = cache; _fallbackFactory = fallbackFactory; }
+        public IndexedExternalGdoSnapshotService(ExternalGdoSnapshotIndexData index, SnapshotCache cache)
+        { _entries = (index?.entries ?? Array.Empty<ExternalGdoSnapshotIndexEntry>()).ToDictionary(value => value.gdoId); _cache = cache; }
         public IDisposable Request(string providerKey, int gdoId, string runtimeType,
             Action<ExternalGdoSnapshotResult> completed)
         {
@@ -99,29 +94,15 @@ namespace KitchenLib.Studio.Editor.Snapshots
                     if (texture.LoadImage(cached.PngBytes, true)) { _textures.Add(texture); completed(new ExternalGdoSnapshotResult(ExternalGdoSnapshotState.Ready, texture)); return CompletedSnapshotSubscription.Instance; }
                     UnityEngine.Object.DestroyImmediate(texture);
                 }
+                completed(new ExternalGdoSnapshotResult(ExternalGdoSnapshotState.Unavailable,
+                    diagnostic: "The generated vanilla snapshot PNG is missing or invalid. Refresh the snapshot catalogue."));
+                return CompletedSnapshotSubscription.Instance;
             }
-            if (_fallback != null) return _fallback.Request(providerKey, gdoId, runtimeType, completed);
-            completed(new ExternalGdoSnapshotResult(ExternalGdoSnapshotState.Loading,
-                diagnostic: "Loading snapshot catalogue…"));
-            StartFallback(gdoId, runtimeType, completed);
+            completed(new ExternalGdoSnapshotResult(ExternalGdoSnapshotState.Unavailable,
+                diagnostic: "No generated vanilla snapshot is available. Refresh the snapshot catalogue."));
             return CompletedSnapshotSubscription.Instance;
         }
-        private async void StartFallback(int gdoId, string runtimeType,
-            Action<ExternalGdoSnapshotResult> completed)
-        {
-            try
-            {
-                _fallbackTask = _fallbackTask ?? _fallbackFactory();
-                IExternalGdoSnapshotService service = await _fallbackTask;
-                if (_disposed) { service.Dispose(); return; }
-                _fallback = service;
-                _fallback.Request(ExternalGdoCatalogRepository.VanillaProviderKey, gdoId,
-                    runtimeType, completed);
-            }
-            catch (Exception exception)
-            { if (!_disposed) completed(new ExternalGdoSnapshotResult(ExternalGdoSnapshotState.Failed, diagnostic: exception.Message)); }
-        }
         public void Dispose()
-        { _disposed = true; _fallback?.Dispose(); foreach (Texture2D texture in _textures) if (texture != null) UnityEngine.Object.DestroyImmediate(texture); _textures.Clear(); }
+        { foreach (Texture2D texture in _textures) if (texture != null) UnityEngine.Object.DestroyImmediate(texture); _textures.Clear(); }
     }
 }
