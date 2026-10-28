@@ -127,16 +127,6 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         }
 
-        public static void ImportGdoBatch(PlateUpInstallation installation, CancellationToken token)
-        {
-            ImportCombinedBatch(installation, token);
-        }
-
-        public static void ImportSnapshotBatch(PlateUpInstallation installation, CancellationToken token)
-        {
-            ImportCombinedBatch(installation, token);
-        }
-
         public static void ImportCombinedBatch(PlateUpInstallation installation, CancellationToken token)
         {
             KitchenLibStudioBootstrap.RequireCurrentOutput(installation);

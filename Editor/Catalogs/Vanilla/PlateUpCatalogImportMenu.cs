@@ -1,5 +1,4 @@
 using System;
-using UnityEditor;
 
 using KitchenLib.Studio.Editor.Bootstrap;
 
@@ -17,24 +16,6 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         {
             PlateUpInstallation installation = ResolveInstallation(true);
             if (installation != null) PlateUpCatalogImportController.Import(installation);
-        }
-
-        [MenuItem("KitchenLib Studio/Catalogues/Refresh Vanilla GDO Catalogue")]
-        public static void RefreshVanillaGdoCatalogue()
-        {
-            PlateUpInstallation installation = ResolveInstallation(true);
-            if (installation == null) return;
-            PlateUpCatalogImportController.ImportGdoBatch(installation, System.Threading.CancellationToken.None);
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
-        }
-
-        [MenuItem("KitchenLib Studio/Catalogues/Refresh Snapshot Catalogue")]
-        public static void RefreshSnapshotCatalogue()
-        {
-            PlateUpInstallation installation = ResolveInstallation(true);
-            if (installation == null) return;
-            PlateUpCatalogImportController.ImportSnapshotBatch(installation, System.Threading.CancellationToken.None);
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
         }
 
         public static void ChangeInstallation() => PlateUpInstallationSettings.ChangeInstallation();
