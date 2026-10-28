@@ -23,15 +23,23 @@ namespace KitchenLib.Studio.Editor.Snapshots
 
         public async Task<IReadOnlyList<VanillaSnapshotPng>> RenderAsync(
             VanillaAssetCatalogData catalog, IPlateUpPreviewDecodeSession session,
+            IProgress<VanillaSnapshotBatchProgress> progress, CancellationToken token) =>
+            (await RenderBatchAsync(catalog, session, progress, token)).Pngs;
+
+        public async Task<VanillaSnapshotBatchResult> RenderBatchAsync(
+            VanillaAssetCatalogData catalog, IPlateUpPreviewDecodeSession session,
             IProgress<VanillaSnapshotBatchProgress> progress, CancellationToken token)
         {
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
             if (session == null) throw new ArgumentNullException(nameof(session));
             var unsupported = new List<VanillaSnapshotPng>();
             var resolved = new Dictionary<string, List<int>>(StringComparer.Ordinal);
-            foreach (VanillaAssetRecordData gdo in (catalog.records ?? Array.Empty<VanillaAssetRecordData>())
+            VanillaAssetRecordData[] gdos = (catalog.records ?? Array.Empty<VanillaAssetRecordData>())
                 .Where(value => value != null && value.kind == "gdo" && value.gdoId != 0)
-                .OrderBy(value => value.gdoId))
+                .OrderBy(value => value.gdoId).ToArray();
+            int eligibleCount = 0;
+            int resolvedCount = 0;
+            foreach (VanillaAssetRecordData gdo in gdos)
             {
                 token.ThrowIfCancellationRequested();
                 if (!ExternalGdoSnapshotEligibility.IsEligible(gdo.runtimeType))
@@ -40,6 +48,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
                         "No snapshot for this GDO type."));
                     continue;
                 }
+                eligibleCount++;
                 ExternalGdoSnapshotSourceResolution source = _resolve(catalog, gdo.gdoId);
                 if (!source.Succeeded)
                 {
@@ -47,6 +56,7 @@ namespace KitchenLib.Studio.Editor.Snapshots
                         source.Diagnostic));
                     continue;
                 }
+                resolvedCount++;
                 if (!resolved.TryGetValue(source.GameObjectKey, out List<int> ids))
                     resolved.Add(source.GameObjectKey, ids = new List<int>());
                 ids.Add(gdo.gdoId);
@@ -95,7 +105,21 @@ namespace KitchenLib.Studio.Editor.Snapshots
                 progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed, work.Length));
             }
             output.AddRange(unsupported.OrderBy(value => value.GdoIds[0]));
-            return output;
+            int renderedCount = output.Where(value => value.IsRendered).Sum(value => value.GdoIds.Count);
+            int sourceCandidates = (ExternalGdoSnapshotIndexFile.Build(catalog).entries ??
+                Array.Empty<ExternalGdoSnapshotIndexEntry>()).Length;
+            return new VanillaSnapshotBatchResult(output,
+                new VanillaSnapshotBatchSummary(gdos.Length, eligibleCount, resolvedCount, renderedCount,
+                    sourceCandidates));
         }
+    }
+
+    internal sealed class VanillaSnapshotBatchResult
+    {
+        public VanillaSnapshotBatchResult(IReadOnlyList<VanillaSnapshotPng> pngs,
+            VanillaSnapshotBatchSummary summary)
+        { Pngs = pngs ?? throw new ArgumentNullException(nameof(pngs)); Summary = summary ?? throw new ArgumentNullException(nameof(summary)); }
+        public IReadOnlyList<VanillaSnapshotPng> Pngs { get; }
+        public VanillaSnapshotBatchSummary Summary { get; }
     }
 }
