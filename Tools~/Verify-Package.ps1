@@ -91,21 +91,19 @@ foreach ($file in $allFiles) {
     }
 }
 
-# Package upgrades can compile against generated descriptor sources from the prior
-# package revision. Optional generated members must therefore be read through the
-# compatibility accessor instead of being bound directly by package source.
-$descriptorConsumers = @($allFiles | Where-Object {
-    ((Relative-Path $_.FullName).StartsWith('Editor/Authoring/', [StringComparison]::Ordinal) -or
-     (Relative-Path $_.FullName).StartsWith('Editor/Overlays/', [StringComparison]::Ordinal)) -and
-    (Relative-Path $_.FullName) -cne 'Editor/Authoring/GdoDescriptorCatalog.cs' -and
-    $_.Extension -ceq '.cs'
-})
-foreach ($file in $descriptorConsumers) {
-    $relative = Relative-Path $file.FullName
-    $content = Get-Content -LiteralPath $file.FullName -Raw
-    if ($content -match '\b(?:field\.Descriptor|field|metadata)\.(?:AuthoringStorage|SerializedPropertyPath)\b') {
-        Add-Failure "Generated descriptor compatibility bypassed: $relative"
-    }
+# Generated mirrors are not backward compatible. A versioned compile gate keeps
+# the editor assembly unloaded until the current generator publishes fresh output.
+$editorAssemblySource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/KitchenLib.Studio.Editor.asmdef') -Raw
+$defineSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/KitchenLibStudioDefineSymbols.cs') -Raw
+$generatorSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/PlateUpMirrorGenerator.cs') -Raw
+if ($editorAssemblySource -notmatch 'KITCHENLIB_STUDIO_MIRRORS_V3' -or
+    $defineSource -notmatch 'KITCHENLIB_STUDIO_MIRRORS_V3' -or
+    $defineSource -notmatch 'StartsWith\(MirrorsSymbolPrefix' -or
+    $generatorSource -notmatch 'Version\s*=>\s*"3/') {
+    Add-Failure 'Current editor code must require regenerated V3 mirrors and remove stale mirror symbols.'
+}
+if ((Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Authoring/GdoDescriptorCatalog.cs') -Raw) -match 'GdoFieldDescriptorCompatibility') {
+    Add-Failure 'Generated mirror backward-compatibility accessors are forbidden.'
 }
 
 $bootstrapSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Bootstrap/KitchenLibStudioBootstrap.cs') -Raw

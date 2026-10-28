@@ -45,7 +45,7 @@ namespace KitchenLib.Studio.Editor.Overlays
                 {
                     GdoFieldDescriptorData metadata = FindField(field.DeclaringType, field.FieldName);
                     if (metadata == null) throw new InvalidOperationException("Unknown schema field " + field.DeclaringType + "." + field.FieldName + ".");
-                    if (GdoFieldDescriptorCompatibility.AuthoringStorage(metadata) != "Sidecar")
+                    if (metadata.AuthoringStorage != "Sidecar")
                         throw new InvalidOperationException("Field is not sidecar-authored: " + field.DeclaringType + "." + field.FieldName + ".");
                 }
                 ValidationIssue issue = GdoDescriptorValueValidator.Validate(overlay.Target, overlay, targetDescriptor).FirstOrDefault();

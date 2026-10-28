@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using KitchenData;
 using KitchenLib.Studio.Generated;
 
@@ -59,21 +58,4 @@ namespace KitchenLib.Studio.Editor.Authoring
         }
     }
 
-    internal static class GdoFieldDescriptorCompatibility
-    {
-        private static readonly FieldInfo AuthoringStorageField = FindField("AuthoringStorage");
-        private static readonly FieldInfo SerializedPropertyPathField = FindField("SerializedPropertyPath");
-
-        public static string AuthoringStorage(GdoFieldDescriptorData descriptor) =>
-            ReadString(AuthoringStorageField, descriptor) ?? "Unsupported";
-
-        public static string SerializedPropertyPath(GdoFieldDescriptorData descriptor) =>
-            ReadString(SerializedPropertyPathField, descriptor);
-
-        private static FieldInfo FindField(string name) => typeof(GdoFieldDescriptorData).GetField(name,
-            BindingFlags.Instance | BindingFlags.Public);
-
-        private static string ReadString(FieldInfo field, GdoFieldDescriptorData descriptor) =>
-            descriptor == null || field == null ? null : field.GetValue(descriptor) as string;
-    }
 }

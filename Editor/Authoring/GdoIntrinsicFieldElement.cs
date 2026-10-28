@@ -25,11 +25,9 @@ namespace KitchenLib.Studio.Editor.Authoring
             name = field.Key;
             AddToClassList("kls-gdo-field");
 
-            string authoringStorage = GdoFieldDescriptorCompatibility.AuthoringStorage(field.Descriptor);
-            string serializedPropertyPath = GdoFieldDescriptorCompatibility.SerializedPropertyPath(field.Descriptor);
-            if (authoringStorage == "Native")
+            if (field.Descriptor.AuthoringStorage == "Native")
             {
-                SerializedProperty property = serializedObject?.FindProperty(serializedPropertyPath);
+                SerializedProperty property = serializedObject?.FindProperty(field.Descriptor.SerializedPropertyPath);
                 if (property != null)
                 {
                     var propertyField = new PropertyField(property, field.Name);
@@ -37,12 +35,12 @@ namespace KitchenLib.Studio.Editor.Authoring
                     Add(propertyField);
                 }
                 else Add(new HelpBox("Native authoring invariant failed for " + field.Key +
-                    ": serialized path '" + serializedPropertyPath + "' was not found.",
+                    ": serialized path '" + field.Descriptor.SerializedPropertyPath + "' was not found.",
                     HelpBoxMessageType.Error));
                 return;
             }
 
-            if (authoringStorage != "Sidecar")
+            if (field.Descriptor.AuthoringStorage != "Sidecar")
             {
                 Add(new HelpBox("Field is not supported by native or sidecar authoring: " + field.Key + ".",
                     HelpBoxMessageType.Error));

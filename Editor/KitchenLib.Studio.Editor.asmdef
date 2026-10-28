@@ -12,7 +12,7 @@
     "Mono.Cecil.Rocks.dll"
   ],
   "overrideReferences": true,
-  "defineConstraints": ["KITCHENLIB_STUDIO_MIRRORS"],
+  "defineConstraints": ["KITCHENLIB_STUDIO_MIRRORS_V3"],
   "includePlatforms": [
     "Editor"
   ]

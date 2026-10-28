@@ -6,7 +6,8 @@ namespace KitchenLib.Studio.Editor.Bootstrap
 {
     internal static class KitchenLibStudioDefineSymbols
     {
-        public const string MirrorsSymbol = "KITCHENLIB_STUDIO_MIRRORS";
+        public const string MirrorsSymbolPrefix = "KITCHENLIB_STUDIO_MIRRORS";
+        public const string MirrorsSymbol = "KITCHENLIB_STUDIO_MIRRORS_V3";
         public static bool MirrorsEnabled => PlayerSettings.GetScriptingDefineSymbolsForGroup(
             BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget)).Split(';').Contains(MirrorsSymbol);
 
@@ -21,8 +22,9 @@ namespace KitchenLib.Studio.Editor.Bootstrap
                 string current = PlayerSettings.GetScriptingDefineSymbolsForGroup(group);
                 var symbols = current.Split(';').Where(value => !string.IsNullOrWhiteSpace(value)).ToList();
                 bool present = symbols.Contains(MirrorsSymbol);
-                if (present == enabled) continue;
-                symbols.RemoveAll(value => value == MirrorsSymbol);
+                bool stale = symbols.Any(value => value.StartsWith(MirrorsSymbolPrefix, StringComparison.Ordinal) && value != MirrorsSymbol);
+                if (present == enabled && !stale) continue;
+                symbols.RemoveAll(value => value.StartsWith(MirrorsSymbolPrefix, StringComparison.Ordinal));
                 if (enabled) symbols.Add(MirrorsSymbol);
                 PlayerSettings.SetScriptingDefineSymbolsForGroup(group, string.Join(";", symbols));
             }
