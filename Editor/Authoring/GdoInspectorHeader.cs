@@ -45,8 +45,9 @@ namespace KitchenLib.Studio.Editor.Authoring
             foreach (GdoInspectorField field in model.Section(GdoInspectorFieldKind.Authored).Fields)
             {
                 if (field.Descriptor == null || field.Descriptor.Value.Kind != "UnityObject" || field.Descriptor.Value.RuntimeTypeName != "UnityEngine.GameObject") continue;
-                if (field.Descriptor.AuthoringStorage != "Native") continue;
-                SerializedProperty property = serializedObject.FindProperty(field.Descriptor.SerializedPropertyPath);
+                if (GdoFieldDescriptorCompatibility.AuthoringStorage(field.Descriptor) != "Native") continue;
+                SerializedProperty property = serializedObject.FindProperty(
+                    GdoFieldDescriptorCompatibility.SerializedPropertyPath(field.Descriptor));
                 if (property == null || property.objectReferenceValue == null) continue;
                 Object referenced = property.objectReferenceValue;
                 Add(new Button(() => Selection.activeObject = referenced) { text = "Locate " + field.Name });

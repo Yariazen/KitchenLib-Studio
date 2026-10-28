@@ -85,7 +85,8 @@ namespace KitchenLib.Studio.Editor.Authoring
             {
                 foreach (GdoFieldDescriptorData field in type.Data.Fields.OrderBy(item => item.Name, StringComparer.Ordinal))
                 {
-                    bool unsupported = field.AuthoringStorage == "Unsupported" || ContainsKind(field.Value, "Unsupported");
+                    bool unsupported = GdoFieldDescriptorCompatibility.AuthoringStorage(field) == "Unsupported" ||
+                        ContainsKind(field.Value, "Unsupported");
                     bool stableId = field.Name == "ID" && field.DeclaringTypeName == "KitchenData.GameDataObject";
                     GdoInspectorFieldKind kind = stableId
                         ? GdoInspectorFieldKind.RuntimeDerived
