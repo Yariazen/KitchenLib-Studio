@@ -19,6 +19,15 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
         }
     }
 
+    internal sealed class VanillaSnapshotBatchProgress
+    {
+        public VanillaSnapshotBatchProgress(string gameObjectKey, int completed, int total)
+        { GameObjectKey = gameObjectKey; Completed = completed; Total = total; }
+        public string GameObjectKey { get; }
+        public int Completed { get; }
+        public int Total { get; }
+    }
+
     internal sealed class VanillaSnapshotPng
     {
         public VanillaSnapshotPng(string cacheKey, string gameObjectKey, IReadOnlyList<int> gdoIds,

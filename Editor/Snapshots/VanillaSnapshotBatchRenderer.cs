@@ -11,20 +11,22 @@ namespace KitchenLib.Studio.Editor.Snapshots
     internal sealed class VanillaSnapshotBatchRenderer
     {
         private readonly Func<VanillaAssetCatalogData, int, ExternalGdoSnapshotSourceResolution> _resolve;
-        private readonly Func<string, CancellationToken, Task<SnapshotRenderResult>> _render;
+        private readonly Func<IPlateUpPreviewDecodeSession, string, CancellationToken, Task<SnapshotRenderResult>> _render;
 
         public VanillaSnapshotBatchRenderer(
             Func<VanillaAssetCatalogData, int, ExternalGdoSnapshotSourceResolution> resolve,
-            Func<string, CancellationToken, Task<SnapshotRenderResult>> render)
+            Func<IPlateUpPreviewDecodeSession, string, CancellationToken, Task<SnapshotRenderResult>> render)
         {
             _resolve = resolve ?? throw new ArgumentNullException(nameof(resolve));
             _render = render ?? throw new ArgumentNullException(nameof(render));
         }
 
         public async Task<IReadOnlyList<VanillaSnapshotPng>> RenderAsync(
-            VanillaAssetCatalogData catalog, CancellationToken token)
+            VanillaAssetCatalogData catalog, IPlateUpPreviewDecodeSession session,
+            IProgress<VanillaSnapshotBatchProgress> progress, CancellationToken token)
         {
             if (catalog == null) throw new ArgumentNullException(nameof(catalog));
+            if (session == null) throw new ArgumentNullException(nameof(session));
             var unsupported = new List<VanillaSnapshotPng>();
             var resolved = new Dictionary<string, List<int>>(StringComparer.Ordinal);
             foreach (VanillaAssetRecordData gdo in (catalog.records ?? Array.Empty<VanillaAssetRecordData>())
@@ -53,15 +55,23 @@ namespace KitchenLib.Studio.Editor.Snapshots
             var output = new List<VanillaSnapshotPng>();
             var options = new SnapshotRenderOptions(ExternalGdoSnapshotCacheIdentity.ThumbnailSize,
                 ExternalGdoSnapshotCacheIdentity.ThumbnailSize);
-            foreach (KeyValuePair<string, List<int>> item in resolved.OrderBy(value => value.Key, StringComparer.Ordinal))
+            KeyValuePair<string, List<int>>[] work = resolved.OrderBy(value => value.Key, StringComparer.Ordinal).ToArray();
+            progress?.Report(new VanillaSnapshotBatchProgress(null, 0, work.Length));
+            int completed = 0;
+            foreach (KeyValuePair<string, List<int>> item in work)
             {
                 token.ThrowIfCancellationRequested();
+                progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed + 1, work.Length));
+                if (progress != null) await Task.Yield();
+                token.ThrowIfCancellationRequested();
                 SnapshotRenderResult rendered;
-                try { rendered = await _render(item.Key, token); }
+                try { rendered = await _render(session, item.Key, token); }
                 catch (SnapshotSubjectUnsupportedException exception)
                 {
                     unsupported.Add(new VanillaSnapshotPng(null, item.Key, item.Value.ToArray(), null, null,
                         exception.Message));
+                    completed++;
+                    progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed, work.Length));
                     continue;
                 }
                 token.ThrowIfCancellationRequested();
@@ -81,6 +91,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
                 };
                 output.Add(new VanillaSnapshotPng(cacheKey, item.Key, item.Value.ToArray(),
                     rendered.PngBytes, metadata));
+                completed++;
+                progress?.Report(new VanillaSnapshotBatchProgress(item.Key, completed, work.Length));
             }
             output.AddRange(unsupported.OrderBy(value => value.GdoIds[0]));
             return output;

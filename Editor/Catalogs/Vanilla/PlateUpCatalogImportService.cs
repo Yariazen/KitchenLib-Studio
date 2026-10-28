@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 
 using KitchenLib.Studio.Editor.Bootstrap;
 using KitchenLib.Studio.Editor.Infrastructure;
@@ -66,12 +68,18 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
 
         public async Task<PlateUpCatalogImportResult> ImportCombinedAsync(PlateUpInstallation installation,
             VanillaCatalogPublicationPaths paths, IProgress<VanillaGdoScanProgress> progress,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken, IProgress<VanillaSnapshotBatchProgress> snapshotProgress = null)
         {
             if (installation == null) throw new ArgumentNullException(nameof(installation));
             if (paths == null) throw new ArgumentNullException(nameof(paths));
             if (Interlocked.CompareExchange(ref _active, 1, 0) != 0)
                 return PlateUpCatalogImportResult.Failure("A PlateUp catalog import is already running.");
+            var totalWatch = Stopwatch.StartNew();
+            var validationWatch = new Stopwatch();
+            var publishWatch = new Stopwatch();
+            TimeSpan decodeElapsed = TimeSpan.Zero;
+            TimeSpan renderElapsed = TimeSpan.Zero;
+            string outcome = "failed";
             try
             {
                 var snapshotReader = new AssetsToolsSnapshotCatalogReader();
@@ -94,22 +102,41 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 var repository = new VanillaAssetCatalogRepository(snapshots);
                 var renderer = new GameObjectSnapshotService(installation.GameRoot, snapshots, repository);
                 var batch = new VanillaSnapshotBatchRenderer(ExternalGdoSnapshotSourceResolver.Resolve,
-                    (key, token) => Task.FromResult(renderer.RenderVanillaBlocking(key,
+                    (session, key, token) => Task.FromResult(renderer.RenderVanillaBlocking(session, key,
                         new SnapshotRenderOptions(ExternalGdoSnapshotCacheIdentity.ThumbnailSize,
-                            ExternalGdoSnapshotCacheIdentity.ThumbnailSize), token)));
+                            ExternalGdoSnapshotCacheIdentity.ThumbnailSize), token, timing =>
+                            { decodeElapsed += timing.Decode; renderElapsed += timing.Render; })));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
-                var pngs = await batch.RenderAsync(snapshots, cancellationToken);
+                var decoder = new AssetsToolsPlateUpPreviewDecoder();
+                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                validationWatch.Start();
+                using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
+                {
+                    validationWatch.Stop();
+                    pngs = await batch.RenderAsync(snapshots, session, snapshotProgress, cancellationToken);
+                }
                 cancellationToken.ThrowIfCancellationRequested();
+                publishWatch.Start();
                 var generation = new VanillaCatalogGeneration(gdos, snapshots,
                     RenderedIndex(snapshots, pngs), pngs);
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish);
                 VanillaCatalogPublication.Publish(generation, paths, cancellationToken);
+                publishWatch.Stop();
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish, true);
+                outcome = "success";
                 return PlateUpCatalogImportResult.Success();
             }
-            catch (OperationCanceledException) { return PlateUpCatalogImportResult.CancelledResult(); }
+            catch (OperationCanceledException) { outcome = "cancelled"; return PlateUpCatalogImportResult.CancelledResult(); }
             catch (Exception exception) { return PlateUpCatalogImportResult.Failure(exception.ToString()); }
-            finally { Interlocked.Exchange(ref _active, 0); }
+            finally
+            {
+                if (validationWatch.IsRunning) validationWatch.Stop();
+                if (publishWatch.IsRunning) publishWatch.Stop();
+                totalWatch.Stop();
+                LogTimings(validationWatch.Elapsed, decodeElapsed, renderElapsed, publishWatch.Elapsed,
+                    totalWatch.Elapsed, outcome);
+                Interlocked.Exchange(ref _active, 0);
+            }
         }
 
         public PlateUpCatalogImportResult ImportCombinedBlocking(PlateUpInstallation installation,
@@ -120,6 +147,12 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
             if (paths == null) throw new ArgumentNullException(nameof(paths));
             if (Interlocked.CompareExchange(ref _active, 1, 0) != 0)
                 return PlateUpCatalogImportResult.Failure("A PlateUp catalog import is already running.");
+            var totalWatch = Stopwatch.StartNew();
+            var validationWatch = new Stopwatch();
+            var publishWatch = new Stopwatch();
+            TimeSpan decodeElapsed = TimeSpan.Zero;
+            TimeSpan renderElapsed = TimeSpan.Zero;
+            string outcome = "failed";
             try
             {
                 var snapshotReader = new AssetsToolsSnapshotCatalogReader();
@@ -141,18 +174,37 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 var options = new SnapshotRenderOptions(ExternalGdoSnapshotCacheIdentity.ThumbnailSize,
                     ExternalGdoSnapshotCacheIdentity.ThumbnailSize);
                 var batch = new VanillaSnapshotBatchRenderer(ExternalGdoSnapshotSourceResolver.Resolve,
-                    (key, token) => Task.FromResult(renderer.RenderVanillaBlocking(key, options, token)));
+                    (session, key, token) => Task.FromResult(renderer.RenderVanillaBlocking(session, key, options,
+                        token, timing => { decodeElapsed += timing.Decode; renderElapsed += timing.Render; })));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
-                var pngs = batch.RenderAsync(snapshots, cancellationToken).GetAwaiter().GetResult();
+                var decoder = new AssetsToolsPlateUpPreviewDecoder();
+                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                validationWatch.Start();
+                using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
+                {
+                    validationWatch.Stop();
+                    pngs = batch.RenderAsync(snapshots, session, null, cancellationToken).GetAwaiter().GetResult();
+                }
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish);
+                publishWatch.Start();
                 VanillaCatalogPublication.Publish(new VanillaCatalogGeneration(gdos, snapshots,
                     RenderedIndex(snapshots, pngs), pngs), paths, cancellationToken);
+                publishWatch.Stop();
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish, true);
+                outcome = "success";
                 return PlateUpCatalogImportResult.Success();
             }
-            catch (OperationCanceledException) { return PlateUpCatalogImportResult.CancelledResult(); }
+            catch (OperationCanceledException) { outcome = "cancelled"; return PlateUpCatalogImportResult.CancelledResult(); }
             catch (Exception exception) { return PlateUpCatalogImportResult.Failure(exception.ToString()); }
-            finally { Interlocked.Exchange(ref _active, 0); }
+            finally
+            {
+                if (validationWatch.IsRunning) validationWatch.Stop();
+                if (publishWatch.IsRunning) publishWatch.Stop();
+                totalWatch.Stop();
+                LogTimings(validationWatch.Elapsed, decodeElapsed, renderElapsed, publishWatch.Elapsed,
+                    totalWatch.Elapsed, outcome);
+                Interlocked.Exchange(ref _active, 0);
+            }
         }
 
         private static void EnrichSnapshotRuntimeTypes(VanillaGdoCatalogData gdos,
@@ -167,6 +219,13 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                     record.assemblyName = gdo.assemblyName;
                 }
         }
+
+        private static void LogTimings(TimeSpan validation, TimeSpan decode, TimeSpan render,
+            TimeSpan publication, TimeSpan total, string outcome) => UnityEngine.Debug.Log(
+                "KitchenLib Studio vanilla catalogue timings (" + outcome + ", ms): " +
+                "validation=" + (long)validation.TotalMilliseconds + ", decode=" + (long)decode.TotalMilliseconds +
+                ", render=" + (long)render.TotalMilliseconds + ", publication=" +
+                (long)publication.TotalMilliseconds + ", total=" + (long)total.TotalMilliseconds + ".");
 
         private static ExternalGdoSnapshotIndexData RenderedIndex(VanillaAssetCatalogData snapshots,
             System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs)

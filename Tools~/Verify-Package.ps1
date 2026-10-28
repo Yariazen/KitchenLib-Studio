@@ -110,11 +110,17 @@ $bootstrapSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Boot
 if ($bootstrapSource -notmatch 'wordWrap\s*=\s*true' -or $bootstrapSource -notmatch '\.CalcHeight\s*\(') {
     Add-Failure 'Setup installation path must wrap and allocate its calculated display height.'
 }
+$snapshotBatchSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Snapshots/VanillaSnapshotBatchRenderer.cs') -Raw
+$catalogControllerSource = Get-Content -LiteralPath (Join-Path $packageRoot 'Editor/Catalogs/Vanilla/PlateUpCatalogImportController.cs') -Raw
+if ($snapshotBatchSource -notmatch 'IPlateUpPreviewDecodeSession\s+session' -or
+    $catalogControllerSource -notmatch 'Rendering snapshot.* of ') {
+    Add-Failure 'Vanilla snapshot generation must reuse one decode session and report item progress.'
+}
 
 try {
     $package = Get-Content -LiteralPath (Join-Path $packageRoot 'package.json') -Raw | ConvertFrom-Json
     if ($package.name -cne 'com.kitchenlib.studio') { Add-Failure "package.json name must be com.kitchenlib.studio." }
-    if ($package.version -cne '0.1.0-alpha.6') { Add-Failure "package.json version must be 0.1.0-alpha.6." }
+    if ($package.version -cne '0.1.0-alpha.7') { Add-Failure "package.json version must be 0.1.0-alpha.7." }
     $expectedRepositoryUrl = 'https://github.com/Yariazen/KitchenLib-Studio.git'
     if ($package.repository.type -cne 'git' -or $package.repository.url -cne $expectedRepositoryUrl) {
         Add-Failure "package.json repository must be $expectedRepositoryUrl."
@@ -517,5 +523,5 @@ if ($failures.Count -gt 0) {
     exit 1
 }
 
-Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.6 package and repository are production-only.'
+Write-Output 'PASS: com.kitchenlib.studio@0.1.0-alpha.7 package and repository are production-only.'
 exit 0

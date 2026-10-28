@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.0-alpha.7]
+
+- Generate vanilla snapshots through one validated AssetsTools session, reusing loaded containers and decoded meshes, materials, textures, and sprites across the batch.
+- Keep sequential Unity rendering responsive with per-snapshot progress, cancellation between snapshots, and validation/decode/render/publication timing diagnostics for every outcome.
+- Install from Git with `https://github.com/Yariazen/KitchenLib-Studio.git#v0.1.0-alpha.7`.
+
 ## [0.1.0-alpha.6]
 
 - Wrap and dynamically size the selected PlateUp installation path in Studio Setup so long paths remain visible.
@@ -59,4 +65,4 @@ This release supersedes the failed `0.1.0-alpha.2` automation candidate and incl
 - Pin and acknowledge the exact AssetRipper type-tree data provenance used by the internal alpha.
 - Show a non-blocking type-tree attribution notice in KitchenLib Studio Setup.
 
-Current alpha label: `0.1.0-alpha.6`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.
+Current alpha label: `0.1.0-alpha.7`. Original KitchenLib Studio code and documentation are licensed under MIT; bundled third-party material retains its separate status. Release publication remains a separate human decision.

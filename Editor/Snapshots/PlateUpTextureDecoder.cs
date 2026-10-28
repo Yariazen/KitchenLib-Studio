@@ -26,7 +26,8 @@ namespace KitchenLib.Studio.Editor.Snapshots
                 fields => Decode(fields, dataRoot, cancellationToken));
         }
 
-        private static PreviewTextureData Decode(AssetTypeValueField fields, string dataRoot, CancellationToken cancellationToken)
+        internal static PreviewTextureData Decode(AssetTypeValueField fields, string dataRoot,
+            CancellationToken cancellationToken)
         {
             string name = fields["m_Name"].AsString;
             int width = fields["m_Width"].AsInt;
