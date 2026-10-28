@@ -108,17 +108,19 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                             { decodeElapsed += timing.Decode; renderElapsed += timing.Render; })));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
                 var decoder = new AssetsToolsPlateUpPreviewDecoder();
-                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                VanillaSnapshotBatchResult snapshotBatch;
                 validationWatch.Start();
                 using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
                 {
                     validationWatch.Stop();
-                    pngs = await batch.RenderAsync(snapshots, session, snapshotProgress, cancellationToken);
+                    snapshotBatch = await batch.RenderBatchAsync(snapshots, session, snapshotProgress, cancellationToken);
                 }
                 cancellationToken.ThrowIfCancellationRequested();
+                LogSnapshotSummary(snapshotBatch.Summary);
+                VanillaSnapshotPublicationGuard.RequireSafeToPublish(snapshotBatch.Summary);
                 publishWatch.Start();
                 var generation = new VanillaCatalogGeneration(gdos, snapshots,
-                    RenderedIndex(snapshots, pngs), pngs);
+                    RenderedIndex(snapshots, snapshotBatch.Pngs), snapshotBatch.Pngs);
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish);
                 VanillaCatalogPublication.Publish(generation, paths, cancellationToken);
                 publishWatch.Stop();
@@ -178,17 +180,19 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                         token, timing => { decodeElapsed += timing.Decode; renderElapsed += timing.Render; })));
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Render);
                 var decoder = new AssetsToolsPlateUpPreviewDecoder();
-                System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs;
+                VanillaSnapshotBatchResult snapshotBatch;
                 validationWatch.Start();
                 using (IPlateUpPreviewDecodeSession session = decoder.OpenSession(installation.GameRoot, snapshots))
                 {
                     validationWatch.Stop();
-                    pngs = batch.RenderAsync(snapshots, session, null, cancellationToken).GetAwaiter().GetResult();
+                    snapshotBatch = batch.RenderBatchAsync(snapshots, session, null, cancellationToken).GetAwaiter().GetResult();
                 }
+                LogSnapshotSummary(snapshotBatch.Summary);
+                VanillaSnapshotPublicationGuard.RequireSafeToPublish(snapshotBatch.Summary);
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish);
                 publishWatch.Start();
                 VanillaCatalogPublication.Publish(new VanillaCatalogGeneration(gdos, snapshots,
-                    RenderedIndex(snapshots, pngs), pngs), paths, cancellationToken);
+                    RenderedIndex(snapshots, snapshotBatch.Pngs), snapshotBatch.Pngs), paths, cancellationToken);
                 publishWatch.Stop();
                 VanillaCatalogImportProgress.Report(progress, VanillaCatalogImportPhase.Publish, true);
                 outcome = "success";
@@ -226,6 +230,9 @@ namespace KitchenLib.Studio.Editor.Catalogs.Vanilla
                 "validation=" + (long)validation.TotalMilliseconds + ", decode=" + (long)decode.TotalMilliseconds +
                 ", render=" + (long)render.TotalMilliseconds + ", publication=" +
                 (long)publication.TotalMilliseconds + ", total=" + (long)total.TotalMilliseconds + ".");
+
+        private static void LogSnapshotSummary(VanillaSnapshotBatchSummary summary) =>
+            UnityEngine.Debug.Log("KitchenLib Studio vanilla snapshot batch: " + summary + ".");
 
         private static ExternalGdoSnapshotIndexData RenderedIndex(VanillaAssetCatalogData snapshots,
             System.Collections.Generic.IReadOnlyList<VanillaSnapshotPng> pngs)
